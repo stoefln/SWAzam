@@ -55,15 +55,19 @@ public class PeerAgent extends Agent {
 	}
 
 	protected SearchResponse searchForFingerPrint(String fingerPrint) {
-		// TODO: replace next line with implementation (its just for testing)
-		return new SearchResponse(fingerPrint);
+		// TODO: replace next lines with implementation (its just for testing)
+		SearchResponse response = new SearchResponse(fingerPrint);
+		response.setTitle("Thriller");
+		response.setAlbum("Thriller");
+		response.setArtist("Michael Jackson");
+		response.setYear(1983);
+		return response;
 	}
 
 	private class requestReceiver extends CyclicBehaviour {
 		private static final long serialVersionUID = 1L;
 
 		void reportFailure(ACLMessage request, String text) {
-			log("reporting back: " + text);
 			ACLMessage reply = request.createReply();
 			reply.setPerformative(ACLMessage.REFUSE);
 			reply.setContent(text);
@@ -72,37 +76,36 @@ public class PeerAgent extends Agent {
 
 		@Override
 		public void action() {
-			log("requestReceiver action()");
-			ACLMessage request = myAgent.receive();
-			if (request != null) {
-				log("got message!");
-				String fingerPrint = request.getContent();
-
+			ACLMessage requestMessage = myAgent.receive();
+			if (requestMessage != null) {
+				log("got request!");
+				
 				try {
-
-					SearchResponse searchResponse = searchForFingerPrint(fingerPrint);
-					ACLMessage reply = request.createReply();
+					SearchRequest request = (SearchRequest) Utility.fromString(requestMessage.getContent());
+					SearchResponse searchResponse = searchForFingerPrint(request.getFingerPrint());
+					searchResponse.setSearchRequest(request);
+					
+					ACLMessage reply = requestMessage.createReply();
 					if (searchResponse != null) {
-						String serialisedSearchResponse = Utility.toString(searchResponse);
+						log("music found!");
 						reply.setPerformative(ACLMessage.CONFIRM);
-						reply.setContent(serialisedSearchResponse);
+						reply.setContent(searchResponse.serialize());
 						myAgent.send(reply);
 					} else {
-
+						log("no music found :/");
 						// TODO: implement forwarding of request to other peers
 						// here
 
-						reportFailure(request, "No links found");
+						reportFailure(requestMessage, "No links found");
 					}
 
 				} catch (IOException e) {
-					reportFailure(request, "Connection Error");
-				} catch (IllegalArgumentException e) {
-					reportFailure(request, "Malformed URL: " + fingerPrint);
-				}
+					reportFailure(requestMessage, "Connection Error");
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} 
 
 			} else {
-				log("responseReceiver block()");
 				block();
 			}
 

@@ -12,24 +12,23 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class ServerAgent extends Agent {
 
 	private static final long serialVersionUID = 2L;
 
-	private Deque<String> fingerPrintSearchQueue = new ArrayDeque<String>();
-	private Set<String> workingOn = new HashSet<String>();
+	private TreeMap<AID, SearchRequest> fingerPrintSearchQueue = new TreeMap<AID, SearchRequest>();
+	private Set<SearchRequest> workingOn = new HashSet<SearchRequest>();
 	private List<AID> peers = new ArrayList<AID>();
 	private List<AID> availablePeers = new ArrayList<AID>();
 
-	private RequestSender requestSender;
+	private RequestForwarder requestForwarder;
 	private ResponseReceiver responseReceiver;
 
 	private RequestReceiver requestReceiver;
@@ -98,15 +97,13 @@ public class ServerAgent extends Agent {
 		// 2) receive requests from clients
 		requestReceiver = new RequestReceiver();
 		addBehaviour(requestReceiver);
-		super.setup();
-		
-		
-		// 3) loop through all available peers and push a searchRequest/fingerprint to each of
-		// them (as long as there are fingerprints)
-		requestSender = new RequestSender(this, 4000);
-		addBehaviour(requestSender);
 
-		
+		// 3) loop through all available peers and forward a
+		// searchRequest/fingerPrint to each of
+		// them (as long as there are fingerPrints)
+		requestForwarder = new RequestForwarder(this, 4000);
+		addBehaviour(requestForwarder);
+
 		// 4) get responses, do transaction stuff (coins) and forward the
 		// response back to the client
 		responseReceiver = new ResponseReceiver();
@@ -116,6 +113,11 @@ public class ServerAgent extends Agent {
 
 	@Override
 	protected void takeDown() {
+		try {
+			DFService.deregister(this);
+		} catch (FIPAException fe) {
+			fe.printStackTrace();
+		}
 		log("ServerAgent " + getAID().getName() + " sais good bye");
 	}
 
@@ -125,35 +127,23 @@ public class ServerAgent extends Agent {
 
 		@Override
 		public void action() {
+
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
 			ACLMessage message = myAgent.receive(mt);
 
 			if (message != null) {
-				AID aid = message.getSender();
-				if (peers.contains(aid)) {
-					availablePeers.add(aid); // Peer has done its job and is now
-												// queued again for the next one
+				SearchRequest request;
+				try {
+					request = (SearchRequest) Utility.fromString(message.getContent());
+					log("Request received from client with fingerPrint \"" + request.getFingerPrint() + "\"");
+					fingerPrintSearchQueue.put(request.getInitiator(), request);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
 				}
-				if (message.getPerformative() == ACLMessage.CONFIRM) {
-					String serialisedSearchResponse = message.getContent();
-					SearchResponse searchResponse = null;
-					try {
-						searchResponse = (SearchResponse) Utility.fromString(serialisedSearchResponse);
-					} catch (IOException e) {
-						e.printStackTrace();
-						return;
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-						return;
-					}
 
-					workingOn.remove(searchResponse.getFingerPrint());
-
-					// TODO: coin transfer
-					// TODO: forward the response back to the client
-
-					log("search response found! " + searchResponse.toString());
-				}
 			} else {
 				block();
 			}
@@ -161,10 +151,10 @@ public class ServerAgent extends Agent {
 		}
 
 	}
-	
-	private class RequestSender extends TickerBehaviour {
 
-		public RequestSender(Agent a, long period) {
+	private class RequestForwarder extends TickerBehaviour {
+
+		public RequestForwarder(Agent a, long period) {
 			super(a, period);
 		}
 
@@ -176,22 +166,25 @@ public class ServerAgent extends Agent {
 			try {
 				log("Available Peers: " + availablePeers.size() + ", search queue size: "
 						+ fingerPrintSearchQueue.size());
-				while (availablePeers.size() > 0) {
-					String fingerPrint = fingerPrintSearchQueue.removeFirst();
-					// check whether the searchrequest is still going on.
+				while (availablePeers.size() > 0 && fingerPrintSearchQueue.size() > 0) {
+					SearchRequest request = fingerPrintSearchQueue.firstEntry().getValue();
+
+					// check whether the searchrequest is still going on. we
+					// dont want to forward the same request more than once
 					// TODO: we need a timeout implementation here
-					if (!workingOn.contains(fingerPrint)) {
-						workingOn.add(fingerPrint);
-						AID aid = availablePeers.remove(0);
-						log("send fingerprint to agent" + aid.getLocalName() + ": " + fingerPrint);
+					if (!workingOn.contains(request)) {
+						workingOn.add(request);
+						AID selectedPeer = availablePeers.remove(0);
+						log("forward fingerPrint to peer " + selectedPeer.getLocalName() + ", fingerPrint: " + request);
 						ACLMessage message = new ACLMessage(ACLMessage.CFP);
-						message.addReceiver(aid);
-						message.setContent(fingerPrint);
+						message.addReceiver(selectedPeer);
+						message.setContent(request.serialize());
 						message.setConversationId("search-fingerprint");
-						message.setReplyWith("message_" + aid + "_" + System.currentTimeMillis());
+						message.setReplyWith("message_" + selectedPeer + "_" + System.currentTimeMillis());
 						myAgent.send(message);
+						fingerPrintSearchQueue.remove(request.getInitiator());
 					} else {
-						log("Removing duplicate entry (" + fingerPrint);
+						log("Removing duplicate entry " + request);
 					}
 				}
 			} catch (NoSuchElementException e) {
@@ -205,27 +198,28 @@ public class ServerAgent extends Agent {
 
 	}
 
-	
-
 	private class ResponseReceiver extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 23L;
 
 		@Override
 		public void action() {
-			ACLMessage reply = myAgent.receive();
+			MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.CONFIRM),
+					MessageTemplate.MatchPerformative(ACLMessage.REFUSE));
+			ACLMessage responseMessage = myAgent.receive(mt);
+			if (responseMessage != null) {
+				if (responseMessage.getPerformative() == ACLMessage.CONFIRM) {
+					AID aid = responseMessage.getSender();
+					if (peers.contains(aid)) {
+						availablePeers.add(aid); // Peer has done its job and is
+													// now
+													// queued again for the next
+													// one
+					}
 
-			if (reply.getPerformative() == ACLMessage.CONFIRM) {
-				AID aid = reply.getSender();
-				if (peers.contains(aid)) {
-					availablePeers.add(aid); // Peer has done its job and is now
-												// queued again for the next one
-				}
-				if (reply.getPerformative() == ACLMessage.CONFIRM) {
-					String serialisedSearchResponse = reply.getContent();
 					SearchResponse searchResponse = null;
 					try {
-						searchResponse = (SearchResponse) Utility.fromString(serialisedSearchResponse);
+						searchResponse = (SearchResponse) Utility.fromString(responseMessage.getContent());
 					} catch (IOException e) {
 						e.printStackTrace();
 						return;
@@ -238,15 +232,24 @@ public class ServerAgent extends Agent {
 
 					// TODO: coin transfer
 					// TODO: forward the response back to the client
-					if(searchResponse.wasFound()){
-						log("search response found! " + searchResponse.toString());
-					}else{
-						log("not response found (timed out)");
+					if (searchResponse.wasFound()) {
+
+						ACLMessage message = new ACLMessage(ACLMessage.CONFIRM);
+						message.addReceiver(searchResponse.getSearchRequest().getInitiator());
+						message.setContent(searchResponse.serialize());
+						message.setConversationId("found-fingerPrint");
+						message.setReplyWith("message_" + myAgent.getName() + "_" + System.currentTimeMillis());
+						myAgent.send(message);
+						log("forwarding search response from peer to client: " + searchResponse.toString());
+					} else {
+						// TODO: notify client
+						log("no response found (timed out)");
 					}
-					
-				} else if(reply.getPerformative() == ACLMessage.REFUSE){
-					log("Peer rejected because: " + reply.getContent());
+
+				} else if (responseMessage.getPerformative() == ACLMessage.REFUSE) {
+					log("Peer rejected because: " + responseMessage.getContent());
 				}
+
 			} else {
 				block();
 			}

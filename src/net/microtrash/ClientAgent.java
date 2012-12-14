@@ -26,7 +26,7 @@ public class ClientAgent extends Agent {
 	private static final long serialVersionUID = 2L;
 	private DFAgentDescription server;
 	private ResponseReceiver responseReceiver;
-	private String searchFingerprint = "";
+	private String searchFingerPrint = "";
 
 	protected void log(String message) {
 		System.out.println(message);
@@ -48,9 +48,8 @@ public class ClientAgent extends Agent {
 			// doDelete();
 		}
 
-		// 1) look for an agent which has registered as "SWAzamServer" every 10
-		// seconds (= wait till a server is online)
-		addBehaviour(new TickerBehaviour(this, 10000) {
+		// 1) look for an agent which has registered as "SWAzamServer" every second (= wait till a server is online)
+		addBehaviour(new TickerBehaviour(this, 1000) {
 
 			private static final long serialVersionUID = 1L;
 
@@ -67,7 +66,7 @@ public class ClientAgent extends Agent {
 							server = result[0];
 
 							// TODO: remove this line, this is just a test:
-							searchByFingerprint("testFingerprint");
+							searchByFingerPrint("hsdf363dkjfuz7897");
 						} else {
 							log("waiting for SWAzamServer...");
 						}
@@ -93,10 +92,10 @@ public class ClientAgent extends Agent {
 	/**
 	 * call this from the GUI
 	 * 
-	 * @param fingerprint
+	 * @param fingerPrint
 	 */
-	public void searchByFingerprint(String fingerprint) {
-		this.searchFingerprint = fingerprint;
+	public void searchByFingerPrint(String fingerPrint) {
+		this.searchFingerPrint = fingerPrint;
 
 		// 2) sends a request to the server
 		addBehaviour(new OneShotBehaviour() {
@@ -106,14 +105,13 @@ public class ClientAgent extends Agent {
 			public void action() {
 
 				if (server != null) {
-					ACLMessage message = new ACLMessage(ACLMessage.CFP);
+					ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
 					message.addReceiver(server.getName());
-					message.setContent(searchFingerprint);
-					message.setConversationId("search-fingerprint");
+					message.setContent(new SearchRequest(searchFingerPrint,myAgent.getAID()).serialize());
+					message.setConversationId("search-fingerPrint");
 					message.setReplyWith("message_" + myAgent.getName() + "_" + System.currentTimeMillis());
-					message.setPerformative(ACLMessage.REQUEST);
 					myAgent.send(message);
-					log("Search request with fingerprint \"" + searchFingerprint + "\" sent to server "
+					log("Search request with fingerPrint \"" + searchFingerPrint + "\" sent to server "
 							+ server.getName());
 				} else {
 					// TODO: output message in GUI
@@ -150,7 +148,8 @@ public class ClientAgent extends Agent {
 					// TODO: display searchResponse in GUI
 
 					if (searchResponse.wasFound()) {
-						log("search response found! " + searchResponse.toString());
+						log("search response found! ");
+						log(searchResponse.toString());
 					} else {
 						log("not response found (timed out)");
 					}
