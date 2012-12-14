@@ -9,13 +9,13 @@ import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -31,144 +31,197 @@ public class ServerAgent extends Agent {
 
 	private RequestSender requestSender;
 	private ResponseReceiver responseReceiver;
-	
+
+	private RequestReceiver requestReceiver;
+
 	protected void log(String message) {
 		System.out.println(message);
 	}
+
 	@Override
 	protected void setup() {
-		System.out.println("Hallo I'm the ServerAgent! My name is "+getAID().getName());
-		
-		Object[] args = getArguments(); 
+		System.out.println("Hallo I'm the ServerAgent! My name is " + getAID().getName());
+
+		Object[] args = getArguments();
 		if (args != null && args.length != 0) {
-			if(args.length > 0){
-				
+			if (args.length > 0) {
+
 			}
-			
-		}else{
-			
-			//doDelete();
-			//return;
+
+		} else {
+
+			// doDelete();
+			// return;
 		}
-		DFAgentDescription agentDescription = new DFAgentDescription(); 
-		agentDescription.setName(getAID()); 
-		ServiceDescription serviceDescription = new ServiceDescription(); 
-		serviceDescription.setType("SWAzamServer"); 
-		serviceDescription.setName("SWAzam Server"); 
+		DFAgentDescription agentDescription = new DFAgentDescription();
+		agentDescription.setName(getAID());
+		ServiceDescription serviceDescription = new ServiceDescription();
+		serviceDescription.setType("SWAzamServer");
+		serviceDescription.setName("SWAzam Server");
 		agentDescription.addServices(serviceDescription);
-		try { 
+		try {
 			DFService.register(this, agentDescription);
 		} catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
-		
-		
-		// 1) look for agents which have registered as "peers" every 10 seconds 
-		addBehaviour(new TickerBehaviour(this, 10000) { 
-			
+
+		// 1) look for agents which have registered as "peers" every 10 seconds
+		addBehaviour(new TickerBehaviour(this, 10000) {
+
 			private static final long serialVersionUID = 1L;
 
 			protected void onTick() {
-				//log("Update the list of Peer agents.");
-				DFAgentDescription template = new DFAgentDescription(); 
-				ServiceDescription sd = new ServiceDescription(); 
-				sd.setType("SWAzamPeer"); 
+				// log("Update the list of Peer agents.");
+				DFAgentDescription template = new DFAgentDescription();
+				ServiceDescription sd = new ServiceDescription();
+				sd.setType("SWAzamPeer");
 				template.addServices(sd);
 				try {
-					//log("All agents: ");
-					DFAgentDescription[] result = DFService.search(myAgent, template); 
+					// log("All agents: ");
+					DFAgentDescription[] result = DFService.search(myAgent, template);
 					for (int i = 0; i < result.length; ++i) {
 						AID name = result[i].getName();
-						if(!peers.contains(name)) {
+						if (!peers.contains(name)) {
 							availablePeers.add(name);
 							peers.add(name);
 							log("new peer registered: " + result[i].getName());
 						}
-						//log("  "+result[i].getName());
+						// log("  "+result[i].getName());
 					}
-				}catch(FIPAException fe) {
+				} catch (FIPAException fe) {
 					fe.printStackTrace();
 				}
-				
-			}			
+
+			}
 		});
+
+		// 2) receive requests from clients
+		requestReceiver = new RequestReceiver();
+		addBehaviour(requestReceiver);
+		super.setup();
 		
-		// 2) loop through all available peers and push a fingerprint to each of them (as long as there are fingerprints) 
+		
+		// 3) loop through all available peers and push a searchRequest/fingerprint to each of
+		// them (as long as there are fingerprints)
 		requestSender = new RequestSender(this, 4000);
 		addBehaviour(requestSender);
+
 		
-		// 3) get responses, do transaction stuff (coins) and forward the response back to the client
+		// 4) get responses, do transaction stuff (coins) and forward the
+		// response back to the client
 		responseReceiver = new ResponseReceiver();
 		addBehaviour(responseReceiver);
 		super.setup();
 	}
-	
+
 	@Override
-	protected void takeDown() { 
-		log("ServerAgent "+getAID().getName()+" sais good bye");
+	protected void takeDown() {
+		log("ServerAgent " + getAID().getName() + " sais good bye");
+	}
+
+	private class RequestReceiver extends CyclicBehaviour {
+
+		private static final long serialVersionUID = 24L;
+
+		@Override
+		public void action() {
+			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+			ACLMessage message = myAgent.receive(mt);
+
+			if (message != null) {
+				AID aid = message.getSender();
+				if (peers.contains(aid)) {
+					availablePeers.add(aid); // Peer has done its job and is now
+												// queued again for the next one
+				}
+				if (message.getPerformative() == ACLMessage.CONFIRM) {
+					String serialisedSearchResponse = message.getContent();
+					SearchResponse searchResponse = null;
+					try {
+						searchResponse = (SearchResponse) Utility.fromString(serialisedSearchResponse);
+					} catch (IOException e) {
+						e.printStackTrace();
+						return;
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+						return;
+					}
+
+					workingOn.remove(searchResponse.getFingerPrint());
+
+					// TODO: coin transfer
+					// TODO: forward the response back to the client
+
+					log("search response found! " + searchResponse.toString());
+				}
+			} else {
+				block();
+			}
+
+		}
+
 	}
 	
+	private class RequestSender extends TickerBehaviour {
 
-	
-	private class RequestSender extends TickerBehaviour{
-		
 		public RequestSender(Agent a, long period) {
 			super(a, period);
 		}
 
-
 		private static final long serialVersionUID = 123L;
 
-		
 		@Override
 		public void onTick() {
-			//log("ParseRequestPerformer action()");
-			try{
-				log("Available Peers: " + availablePeers.size() + ", search queue size: " + fingerPrintSearchQueue.size());
-				while(availablePeers.size() > 0) {
+			// log("ParseRequestPerformer action()");
+			try {
+				log("Available Peers: " + availablePeers.size() + ", search queue size: "
+						+ fingerPrintSearchQueue.size());
+				while (availablePeers.size() > 0) {
 					String fingerPrint = fingerPrintSearchQueue.removeFirst();
 					// check whether the searchrequest is still going on.
 					// TODO: we need a timeout implementation here
-					if(!workingOn.contains(fingerPrint)) {	
+					if (!workingOn.contains(fingerPrint)) {
 						workingOn.add(fingerPrint);
 						AID aid = availablePeers.remove(0);
-						log("send fingerprint to agent"+aid.getLocalName()+": "+fingerPrint);
+						log("send fingerprint to agent" + aid.getLocalName() + ": " + fingerPrint);
 						ACLMessage message = new ACLMessage(ACLMessage.CFP);
 						message.addReceiver(aid);
 						message.setContent(fingerPrint);
 						message.setConversationId("search-fingerprint");
-						message.setReplyWith("message_"+aid+"_"+System.currentTimeMillis());
+						message.setReplyWith("message_" + aid + "_" + System.currentTimeMillis());
 						myAgent.send(message);
 					} else {
 						log("Removing duplicate entry (" + fingerPrint);
 					}
 				}
-			}catch(NoSuchElementException e){
+			} catch (NoSuchElementException e) {
 				log("Queue is empty.");
-			} 
-			
-			if(fingerPrintSearchQueue.size() == 0){
+			}
+
+			if (fingerPrintSearchQueue.size() == 0) {
 				log("Nothing to do. Waiting, waiting, waiting...Boooooring!");
 			}
 		}
 
-		
 	}
 
-	private class ResponseReceiver extends CyclicBehaviour{
-		
+	
+
+	private class ResponseReceiver extends CyclicBehaviour {
+
 		private static final long serialVersionUID = 23L;
 
 		@Override
 		public void action() {
 			ACLMessage reply = myAgent.receive();
-			
-			if (reply != null) {
+
+			if (reply.getPerformative() == ACLMessage.CONFIRM) {
 				AID aid = reply.getSender();
-				if(peers.contains(aid)) {
-					availablePeers.add(aid);	// Peer has done its job and is now queued again for the next one
+				if (peers.contains(aid)) {
+					availablePeers.add(aid); // Peer has done its job and is now
+												// queued again for the next one
 				}
-				if(reply.getPerformative() == ACLMessage.CONFIRM) {
+				if (reply.getPerformative() == ACLMessage.CONFIRM) {
 					String serialisedSearchResponse = reply.getContent();
 					SearchResponse searchResponse = null;
 					try {
@@ -180,19 +233,18 @@ public class ServerAgent extends Agent {
 						e.printStackTrace();
 						return;
 					}
-					
+
 					workingOn.remove(searchResponse.getFingerPrint());
+
+					// TODO: coin transfer
+					// TODO: forward the response back to the client
+					if(searchResponse.wasFound()){
+						log("search response found! " + searchResponse.toString());
+					}else{
+						log("not response found (timed out)");
+					}
 					
-					//TODO: coin transfer
-					//TODO: forward the response back to the client
-					
-					
-					
-					
-					
-					
-					log("search response found! " + searchResponse.toString());
-				} else {
+				} else if(reply.getPerformative() == ACLMessage.REFUSE){
 					log("Peer rejected because: " + reply.getContent());
 				}
 			} else {
@@ -201,7 +253,5 @@ public class ServerAgent extends Agent {
 
 		}
 
-		
 	}
 }
-

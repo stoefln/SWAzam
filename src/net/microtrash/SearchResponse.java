@@ -45,5 +45,8 @@ public class SearchResponse implements Serializable {
 	public void setAlbum(String album) {
 		this.album = album;
 	}
+	public boolean wasFound() {
+		return this.title != null;
+	}
 	
 }
