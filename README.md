@@ -1,7 +1,12 @@
 SWAzam
 ======
 
-A distributed music crawler
+A distributed music crawler based on the JADE framework:
+http://jade.tilab.com/
+
+Installing SWAzam
+--------------
+Just open the project in eclipse and build it. It includes everything you will need.
 
 Running SWAzam
 --------------
