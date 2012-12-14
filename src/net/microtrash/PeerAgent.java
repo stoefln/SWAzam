@@ -16,7 +16,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 
-public class CrawlAgent extends Agent {
+public class PeerAgent extends Agent {
 
 	/**
 	 * 
@@ -32,15 +32,15 @@ public class CrawlAgent extends Agent {
 		DFAgentDescription agentDescription = new DFAgentDescription(); 
 		agentDescription.setName(getAID()); 
 		ServiceDescription serviceDescription = new ServiceDescription(); 
-		serviceDescription.setType("crawling"); 
-		serviceDescription.setName("webpage crawler"); 
+		serviceDescription.setType("SWAzamPeer"); 
+		serviceDescription.setName("SWAzam Peer"); 
 		agentDescription.addServices(serviceDescription);
 		try { 
 			DFService.register(this, agentDescription);
 		} catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
-		addBehaviour(new ParseRequestReceiver());
+		addBehaviour(new requestReceiver());
 		
 		super.setup();
 	}
@@ -52,10 +52,15 @@ public class CrawlAgent extends Agent {
 			fe.printStackTrace();
 		}
 
-		System.out.println("CrawlAgent "+getAID().getName()+" sais good bye");
+		System.out.println("PeerAgent "+getAID().getName()+" sais good bye");
 	}
 
-	private class ParseRequestReceiver extends CyclicBehaviour{
+	protected SearchResponse searchForFingerPrint(String fingerPrint){
+		//TODO: replace next line with implementation (its just for testing)
+		return new SearchResponse(fingerPrint);
+	}
+	
+	private class requestReceiver extends CyclicBehaviour{
 		private static final long serialVersionUID = 1L;
 		
 		void reportFailure(ACLMessage request, String text) {
@@ -66,61 +71,40 @@ public class CrawlAgent extends Agent {
 			myAgent.send(reply);
 		}
 
-		private boolean isHtmlAddress(String url){
-			
-			if(!url.startsWith("http") && !url.startsWith("https")){
-				return false;
-			}
-			String[] noHtmlExtension = {".png", ".jpg", ".jpeg", ".gif"};
-			
-			for(String ext : noHtmlExtension){
-				if(url.endsWith(ext)){
-					return false;
-				}
-			}
-			return true;
-		}
+		
 		
 		@Override
 		public void action() {
-			log("ParseRequestReceiver action()");
+			log("requestReceiver action()");
 			ACLMessage request = myAgent.receive(); 
 			if (request != null) {
 				log("got message!");
-				String urlString = request.getContent();
+				String fingerPrint = request.getContent();
 
 				try {
-					Document doc = Jsoup.connect(urlString).get();
-					Elements newsHeadlines = doc.select("a");
-					Webpage page = new Webpage(urlString);
 					
-					for(Element link : newsHeadlines){
-						String url = link.attr("abs:href");
-						if(!link.attr("href").startsWith("#") && isHtmlAddress(url)){
-							page.addOutgoingLink(url);
-						}
-					}					
-					log("found " + page.getOutgoingLinks().size() + " outgoing links.");
-
+					SearchResponse searchResponse = searchForFingerPrint(fingerPrint);
 					ACLMessage reply = request.createReply();
-					 
-					if (page.getOutgoingLinks().size() > 0) {
-						String serialisedPage = Utility.toString(page);
-						reply.setPerformative(ACLMessage.PROPOSE);
-						reply.setContent(serialisedPage);
+					if(searchResponse != null){
+						String serialisedSearchResponse = Utility.toString(searchResponse);
+						reply.setPerformative(ACLMessage.CONFIRM);
+						reply.setContent(serialisedSearchResponse);
+						myAgent.send(reply);
 					} else {
+						
+						//TODO: implement forwarding of request to other peers here
+						
 						reportFailure(request, "No links found");
-					} 
-					myAgent.send(reply);
+					}
 				
 				} catch (IOException e) {
 					reportFailure(request, "Connection Error");
 				} catch(IllegalArgumentException e){
-					reportFailure(request, "Malformed URL: "+urlString);
+					reportFailure(request, "Malformed URL: "+fingerPrint);
 				}
 				
 			} else {
-				log("ParseResponseReceiver block()");
+				log("responseReceiver block()");
 				block();
 			}
 			
