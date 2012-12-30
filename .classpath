@@ -4,5 +4,11 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="lib/jade-bin/lib/jade.jar" sourcepath="/Volumes/Macintosh HD/Developement/Projects/2012/SWAzam/lib/jade-src"/>
 	<classpathentry kind="lib" path="lib/jsoup-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/fingerprint.jar"/>
+	<classpathentry kind="lib" path="lib/javazoom/jlayer/1.0.1/jlayer-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/javazoom/mp3spi/1.9.5/mp3spi-1.9.5.jar"/>
+	<classpathentry kind="lib" path="lib/jtransforms/jtransforms/2.4/jtransforms-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/tritonus/base/0.3.6/base-0.3.6.jar"/>
+	<classpathentry kind="lib" path="lib/tritonus/misc/0.3.6/misc-0.3.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
