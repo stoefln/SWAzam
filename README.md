@@ -20,3 +20,14 @@ Running Fingerpint Test Application
 --------------
 1. Run Main as Console Application
 2. Check console for the output
+
+Start HSQLDB [ Configuration file - persistence.xml ]
+--------------
+Run hsqldb_start.bat
+
+Start HSQLDB Manager
+--------------
+1. Run hsqldb_manager.bat
+2. Select Type "HSQL Database Engine Server"
+3. Change URL to "jdbc:hsqldb:hsql://localhost/swazamdb"
+4. Click "Ok"

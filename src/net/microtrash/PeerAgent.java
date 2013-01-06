@@ -10,10 +10,9 @@ import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import ac.at.tuwien.infosys.swa.audio.Fingerprint;
+import at.tuwien.sa.fingerprinting.SongManager;
+import at.tuwien.sa.model.entities.Song;
 
 public class PeerAgent extends Agent {
 
@@ -54,13 +53,19 @@ public class PeerAgent extends Agent {
 		System.out.println("PeerAgent " + getAID().getName() + " sais good bye");
 	}
 
-	protected SearchResponse searchForFingerPrint(String fingerPrint) {
+	protected SearchResponse searchForFingerPrint(Fingerprint fingerprint) {
 		// TODO: replace next lines with implementation (its just for testing)
-		SearchResponse response = new SearchResponse(fingerPrint);
-		response.setTitle("Thriller");
-		response.setAlbum("Thriller");
-		response.setArtist("Michael Jackson");
-		response.setYear(1983);
+		SearchResponse response = new SearchResponse(fingerprint);
+		
+		SongManager songManager = new SongManager();
+		if (!songManager.searchSongByFingerprint(fingerprint).isEmpty()) {
+			Song song =  songManager.searchSongByFingerprint(fingerprint).get(0);
+			response.setTitle(song.getTitle());
+			response.setTitle(song.getAlbum());
+			response.setTitle(song.getArtist());
+			response.setYear(song.getYear());
+		}
+		
 		return response;
 	}
 
@@ -86,7 +91,7 @@ public class PeerAgent extends Agent {
 					searchResponse.setSearchRequest(request);
 					
 					ACLMessage reply = requestMessage.createReply();
-					if (searchResponse != null) {
+					if (searchResponse.wasFound()) {
 						log("music found!");
 						reply.setPerformative(ACLMessage.CONFIRM);
 						reply.setContent(searchResponse.serialize());

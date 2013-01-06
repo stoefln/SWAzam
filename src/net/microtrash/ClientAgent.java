@@ -1,6 +1,5 @@
 package net.microtrash;
 
-import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
@@ -12,21 +11,15 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+
+import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 public class ClientAgent extends Agent {
 
 	private static final long serialVersionUID = 2L;
 	private DFAgentDescription server;
 	private ResponseReceiver responseReceiver;
-	private String searchFingerPrint = "";
+	private Fingerprint searchFingerPrint;
 
 	protected void log(String message) {
 		System.out.println(message);
@@ -66,7 +59,7 @@ public class ClientAgent extends Agent {
 							server = result[0];
 
 							// TODO: remove this line, this is just a test:
-							searchByFingerPrint("hsdf363dkjfuz7897");
+							//searchByFingerPrint("hsdf363dkjfuz7897");
 						} else {
 							log("waiting for SWAzamServer...");
 						}
@@ -94,7 +87,7 @@ public class ClientAgent extends Agent {
 	 * 
 	 * @param fingerPrint
 	 */
-	public void searchByFingerPrint(String fingerPrint) {
+	public void searchByFingerPrint(Fingerprint fingerPrint) {
 		this.searchFingerPrint = fingerPrint;
 
 		// 2) sends a request to the server
@@ -130,8 +123,6 @@ public class ClientAgent extends Agent {
 			ACLMessage reply = myAgent.receive();
 
 			if (reply != null) {
-				AID aid = reply.getSender();
-
 				if (reply.getPerformative() == ACLMessage.CONFIRM) { // music
 																		// found
 					String searchResponseSerialised = reply.getContent();

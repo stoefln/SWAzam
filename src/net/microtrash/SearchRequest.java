@@ -1,24 +1,27 @@
 package net.microtrash;
 
+import jade.core.AID;
+
 import java.io.IOException;
 import java.io.Serializable;
 
-import jade.core.AID;
+import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 public class SearchRequest implements Serializable {
-
-	private String fingerPrint;
+	private static final long serialVersionUID = -2338850142504964916L;
+	
+	private Fingerprint fingerPrint;
 	private String accessToken;
 	/**
 	 * agent id of the client which initiated the search
 	 */
 	private AID initiator;
 
-	public String getFingerPrint() {
+	public Fingerprint getFingerPrint() {
 		return fingerPrint;
 	}
 
-	public void setFingerPrint(String fingerPrint) {
+	public void setFingerPrint(Fingerprint fingerPrint) {
 		this.fingerPrint = fingerPrint;
 	}
 
@@ -34,7 +37,7 @@ public class SearchRequest implements Serializable {
 		this.accessToken = accessToken;
 	}
 
-	public SearchRequest(String searchFingerPrint, AID initiator) {
+	public SearchRequest(Fingerprint searchFingerPrint, AID initiator) {
 		this.fingerPrint = searchFingerPrint;
 		this.initiator = initiator;
 	}

@@ -32,6 +32,34 @@ public class Main {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args)  {
+		SongManager songManager = new SongManager();
+		
+		// add song to database
+		songManager.addSong("Song #1", "Artist #1", "Album #1", 2013L, 22000, "samples/4.mp3");
+		
+		songManager.addSong("Song #2", "Artist #2", "Album #2", 2013L, 22000, "samples/2.mp3");
+
+		// remove song from database
+		songManager.removeSong(1L);
+		
+		try {
+			FingerprintSystem fs = new FingerprintSystem(22000);
+			byte[] audio = FileToByteArray("samples/4.mp3");
+			Fingerprint fingerprint = fs.fingerprint(audio);
+		
+			// search song in database
+			System.out.println("Search non-existent song: " + !songManager.searchSongByFingerprint(fingerprint).isEmpty());
+			
+			audio = FileToByteArray("samples/2.mp3");
+			fingerprint = fs.fingerprint(audio);
+			// search song in database
+			System.out.println("Search existent song: " + songManager.searchSongByFingerprint(fingerprint).get(0).getTitle());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+		/* 
 		FingerprintSystem fs = new FingerprintSystem(22000);
 		try {
 			byte[] audio = FileToByteArray("samples/4.mp3");
@@ -50,6 +78,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		*/
 	}
 
 }

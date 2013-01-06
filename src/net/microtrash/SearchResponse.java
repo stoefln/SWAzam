@@ -2,25 +2,26 @@ package net.microtrash;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
+
+import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 public class SearchResponse implements Serializable {
 
 	private static final long serialVersionUID = 2322L;
-	private String fingerPrint;
-	private String title;
-	private int year;
-	private String artist;
-	private String album;
-	private SearchRequest searchRequest;
+	private Fingerprint fingerPrint;
+	private String title = "";
+	private long year = 0;
+	private String artist = "";
+	private String album = "";
+	private SearchRequest searchRequest = null;
 	
-	public SearchResponse(String fingerPrint){
+	public SearchResponse(Fingerprint fingerPrint){
 		this.fingerPrint = fingerPrint;
 	}
-	public String getFingerPrint() {
+	public Fingerprint getFingerPrint() {
 		return fingerPrint;
 	}
-	public void setFingerPrint(String fingerPrint) {
+	public void setFingerPrint(Fingerprint fingerPrint) {
 		this.fingerPrint = fingerPrint;
 	}
 	public String getTitle() {
@@ -29,11 +30,11 @@ public class SearchResponse implements Serializable {
 	public void setTitle(String title) {
 		this.title = title;
 	}
-	public int getYear() {
+	public long getYear() {
 		return year;
 	}
-	public void setYear(int i) {
-		this.year = i;
+	public void setYear(long year) {
+		this.year = year;
 	}
 	public String getArtist() {
 		return artist;
