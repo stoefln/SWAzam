@@ -14,6 +14,7 @@ public class SearchResponse implements Serializable {
 	private String artist = "";
 	private String album = "";
 	private SearchRequest searchRequest = null;
+	private String respondentToken = "";
 	
 	public SearchResponse(Fingerprint fingerPrint){
 		this.fingerPrint = fingerPrint;
@@ -23,6 +24,12 @@ public class SearchResponse implements Serializable {
 	}
 	public void setFingerPrint(Fingerprint fingerPrint) {
 		this.fingerPrint = fingerPrint;
+	}
+	public void setRespondentToken(String token) {
+		this.respondentToken = token;
+	}
+	public String getRespondentToken() {
+		return respondentToken;
 	}
 	public String getTitle() {
 		return title;

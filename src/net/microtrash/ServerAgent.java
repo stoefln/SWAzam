@@ -10,6 +10,7 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.wrapper.gateway.JadeGateway;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 
+import at.ac.tuwien.soar.swazam.server.Server;
+
 public class ServerAgent extends Agent {
 
 	private static final long serialVersionUID = 2L;
@@ -27,11 +30,12 @@ public class ServerAgent extends Agent {
 	private Set<SearchRequest> workingOn = new HashSet<SearchRequest>();
 	private List<AID> peers = new ArrayList<AID>();
 	private List<AID> availablePeers = new ArrayList<AID>();
-
+	
 	private RequestForwarder requestForwarder;
 	private ResponseReceiver responseReceiver;
-
 	private RequestReceiver requestReceiver;
+	
+	private Server server;
 
 	protected void log(String message) {
 		System.out.println(message);
@@ -52,6 +56,7 @@ public class ServerAgent extends Agent {
 			// doDelete();
 			// return;
 		}
+		
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(getAID());
 		ServiceDescription serviceDescription = new ServiceDescription();
@@ -120,6 +125,10 @@ public class ServerAgent extends Agent {
 		}
 		log("ServerAgent " + getAID().getName() + " sais good bye");
 	}
+	
+	public void setServerClass(Server s) {
+		this.server = s;
+	}
 
 	private class RequestReceiver extends CyclicBehaviour {
 
@@ -135,6 +144,9 @@ public class ServerAgent extends Agent {
 				SearchRequest request;
 				try {
 					request = (SearchRequest) Utility.fromString(message.getContent());
+					server.newRequest(request);
+					//TODO Catch eventual exception, should a server-object not have been set?
+					
 					log("Request received from client with fingerPrint \"" + request.getFingerPrint() + "\"");
 					fingerPrintSearchQueue.put(request.getInitiator(), request);
 
@@ -183,6 +195,8 @@ public class ServerAgent extends Agent {
 						message.setReplyWith("message_" + selectedPeer + "_" + System.currentTimeMillis());
 						myAgent.send(message);
 						fingerPrintSearchQueue.remove(request.getInitiator());
+						
+						server.requestResent(request);
 					} else {
 						log("Removing duplicate entry " + request);
 					}
@@ -241,6 +255,9 @@ public class ServerAgent extends Agent {
 						message.setReplyWith("message_" + myAgent.getName() + "_" + System.currentTimeMillis());
 						myAgent.send(message);
 						log("forwarding search response from peer to client: " + searchResponse.toString());
+						
+						server.newResponse(searchResponse);
+						
 					} else {
 						// TODO: notify client
 						log("no response found (timed out)");
@@ -257,4 +274,5 @@ public class ServerAgent extends Agent {
 		}
 
 	}
+	
 }

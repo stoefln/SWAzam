@@ -20,5 +20,6 @@
 	<classpathentry kind="lib" path="lib/hibernate/jboss-transaction-api_1.1_spec-1.0.0.Final.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate/hibernate-entitymanager-4.1.9.Final.jar"/>
 	<classpathentry kind="lib" path="lib/hsqldb.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Oscar/workspace/Software_Architecture/SWAzam/lib/spring-context-2.5.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
