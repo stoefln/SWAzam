@@ -1,71 +1,66 @@
 package client;
 
-/*
- * Copyright (c) 2000 David Flanagan. All rights reserved. This code is from the
- * book Java Examples in a Nutshell, 2nd Edition. It is provided AS-IS, WITHOUT
- * ANY WARRANTY either expressed or implied. You may study, use, and modify it
- * for any non-commercial purpose. You may distribute it non-commercially as
- * long as you retain this notice. For a commercial use license, or to purchase
- * the book (recommended), visit http://www.davidflanagan.com/javaexamples2.
- */
-
 import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.Timer;
-import javax.swing.UIManager;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.StyledDocument;
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.filechooser.FileFilter;
 
-import lib.entities.SearchRequest;
-import lib.entities.SearchResponse;
-
-
+import net.microtrash.SearchResponse;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 public class SwazamGUI extends JPanel {
+
+	
+	private static final long serialVersionUID = 1L;
+	private client.ClientAgent clientAgent;
+
+	public SwazamGUI(ClientAgent agent) {
+		clientAgent = agent;
+
+		JFrame f = new JFrame();
+		f.setTitle("Swazam");
+		f.setSize(500, 400);
+		f.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				System.exit(0);
+			}
+		});
+
+		f.setContentPane(create());
+
+		f.setVisible(true);
+	}
+
 	private final class BrowseButtonListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			JFileChooser c = new JFileChooser();
 			c.setFileFilter(new FileFilter() {
-				
+
 				@Override
 				public String getDescription() {
-					
+
 					return "*.mp3";
 				}
-				
+
 				@Override
 				public boolean accept(File f) {
-					return f.getName().endsWith(".mp3"); 
+					return f.getName().endsWith(".mp3");
 				}
-			}); 
+			});
 			// Demonstrate "Open" dialog:
 			int rVal = c.showOpenDialog(new JFrame());
 			if (rVal == JFileChooser.APPROVE_OPTION) {
@@ -80,16 +75,17 @@ public class SwazamGUI extends JPanel {
 				Runnable fpcalc = new Runnable() {
 					@Override
 					public void run() {
-						SwazamGUI.this.setCursor(new Cursor(Cursor.HAND_CURSOR));
-						fp = FingerPrintCreator
-								.createFingerPrint(selectedFile);
-						request.setFingerprint(fp);
+						SwazamGUI.this
+								.setCursor(new Cursor(Cursor.HAND_CURSOR));
+						fp = FingerPrintCreator.createFingerPrint(selectedFile);
+						request.setFingerPrint(fp);
 						browseButton.setEnabled(true);
 						sendButton.setEnabled(true);
 						resultDisplay
 								.append("\n Fingerprint was calculated. You may now send it to the server.");
-						SwazamGUI.this.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-						
+						SwazamGUI.this.setCursor(new Cursor(
+								Cursor.DEFAULT_CURSOR));
+
 					}
 				};
 
@@ -100,8 +96,7 @@ public class SwazamGUI extends JPanel {
 
 			}
 			if (rVal == JFileChooser.CANCEL_OPTION) {
-				resultDisplay
-						.setText("A valid music file must be selected.");
+				resultDisplay.setText("A valid music file must be selected.");
 
 			}
 		}
@@ -123,7 +118,8 @@ public class SwazamGUI extends JPanel {
 				accessButton.setEnabled(false);
 				sendButton.setEnabled(false);
 				browseButton.setEnabled(true);
-				resultDisplay.setText("You may now select a file. You can select only mp3 files.");
+				resultDisplay
+						.setText("You may now select a file. You can select only mp3 files.");
 
 			} else {
 				resultDisplay.setText("You have to enter valid acessToken");
@@ -134,10 +130,12 @@ public class SwazamGUI extends JPanel {
 	private JButton accessButton, browseButton, sendButton;
 	JTextArea resultDisplay;
 	private boolean AcessTokenIsSet = false;
+	// private at.tuwien.infosys.swa.audio.Fingerprint fp;
 	private Fingerprint fp;
-	SearchRequest request = new SearchRequest(); 
-	SwazamController controller = new SwazamController(); 
-	public SwazamGUI() {
+	Request request = new Request();
+	SwazamController controller = new SwazamController();
+
+	public JPanel create() {
 		// Create and specify a layout manager
 		this.setLayout(new GridBagLayout());
 
@@ -186,38 +184,28 @@ public class SwazamGUI extends JPanel {
 
 		browseButton.addActionListener(new BrowseButtonListener());
 		sendButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				controller.sendRequestAndHandleResponse(request); 
-				SearchResponse res = controller.getResponse(); 
-				if(res==null){
-					resultDisplay.setText("Could not receive a valid response from server."); 
-					return; 
-				}
-				if(res.wasFound()){
-					resultDisplay.setText(res.toString()); 
-					
-				}else{
-					resultDisplay.setText("Sorry, no match found! "); 
-				}
-			}
-		}); 
-
-	}
-
-	public static void main(String[] a) {
-		JFrame f = new JFrame();
-		f.setTitle("Swazam");
-		f.setSize(500, 400);
-		f.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				System.exit(0);
+				clientAgent.reqst = request;
 			}
 		});
-
-		f.setContentPane(new SwazamGUI());
-
-		f.setVisible(true);
+		return this;
 	}
+
+	public void setResult(SearchResponse res) {
+
+		if (res == null) {
+			resultDisplay
+					.setText("Could not receive a valid response from server.");
+			return;
+		}
+		if (res.wasFound()) {
+			resultDisplay.setText(res.toString());
+
+		} else {
+			resultDisplay.setText("Sorry, no match found! ");
+		}
+	}
+
 }

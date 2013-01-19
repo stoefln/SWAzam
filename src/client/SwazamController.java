@@ -1,25 +1,21 @@
 package client;
 
-import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import lib.entities.SearchRequest;
-import lib.entities.SearchResponse;
-
-
-import ac.at.tuwien.infosys.swa.audio.Fingerprint;
+import net.microtrash.SearchResponse;
 
 public class SwazamController {
-	
-	 String serverAddrss = "localhost"; 
-	 int port = 8090; 
-	 SearchResponse response; 
-	public  void sendRequestAndHandleResponse(SearchRequest r) {
+
+	String serverAddrss = "localhost";
+	int port = 8090;
+	SearchResponse response;
+	ClientAgent clientAgent;
+
+	public void sendRequestAndHandleResponse(Request r) {
+
 		try {
 			InetAddress addr;
 			Socket sock = new Socket(serverAddrss, port);
@@ -30,14 +26,12 @@ public class SwazamController {
 					sock.getOutputStream());
 			ObjectInputStream in = new ObjectInputStream(sock.getInputStream());
 
-			
-			
 			output.writeObject(r);
 			System.out.println("Sent to server:" + r);
-			
-			Object ore = in.readObject(); 
-			if(ore instanceof SearchResponse){
-				response = (SearchResponse) ore; 
+
+			Object ore = in.readObject();
+			if (ore instanceof SearchResponse) {
+				response = (SearchResponse) ore;
 			}
 			System.out.println(response);
 			sock.close();
@@ -49,7 +43,7 @@ public class SwazamController {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public SearchResponse getResponse() {
 		return response;
 	}

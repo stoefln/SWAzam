@@ -1,5 +1,6 @@
 package client;
 
+import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
@@ -7,26 +8,23 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.gui.GuiAgent;
-import jade.gui.GuiEvent;
 import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
 
-import lib.entities.SearchRequest;
-import lib.entities.SearchResponse;
-import lib.utils.Utility;
+import net.microtrash.SearchRequest;
+import net.microtrash.SearchResponse;
+import net.microtrash.Utility;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
-import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
 
-public class ClientAgent extends GuiAgent {
+public class ClientAgent extends Agent {
 
 	private static final long serialVersionUID = 2L;
 	private DFAgentDescription server;
 	private ResponseReceiver responseReceiver;
-
-	private ClientGUI gui;
-	private String mp3Filename = null;
+	private Fingerprint searchFingerPrint;
+	Request reqst;
+	private SwazamGUI gui;
 
 	protected void log(String message) {
 		System.out.println(message);
@@ -34,24 +32,25 @@ public class ClientAgent extends GuiAgent {
 
 	@Override
 	protected void setup() {
-		System.out.println("Hallo I'm a ClientAgent!! My name is " + getAID().getName());
-		
+		System.out.println("Hallo I'm a ClientAgent!! My name is "
+				+ getAID().getName());
+
+		gui = new SwazamGUI(this);
+
 		Object[] args = getArguments();
-		if(args != null){
-			System.out.println("params:"+args.length);
-		}
 		if (args != null && args.length != 0) {
-			if (args.length > 0 && args[0].equals("gui")) {
-				gui = new ClientGUI(this);
-			} else if(args.length > 1 && args[0].equals("cli")){
-				mp3Filename  = args[1].toString();
-				System.out.println("Search by CLI for "+mp3Filename+". Hold on...");
+			if (args.length > 0) {
+
+			}
+			if (args.length > 1 && args[1].equals("stayOnDomain")) {
+
 			}
 		} else {
-			
+			// doDelete();
 		}
 
-		// 1) look for an agent which has registered as "SWAzamServer" every second (= wait till a server is online)
+		// 1) look for an agent which has registered as "SWAzamServer" every
+		// second (= wait till a server is online)
 		addBehaviour(new TickerBehaviour(this, 1000) {
 
 			private static final long serialVersionUID = 1L;
@@ -63,22 +62,26 @@ public class ClientAgent extends GuiAgent {
 					sd.setType("SWAzamServer");
 					template.addServices(sd);
 					try {
-						DFAgentDescription[] result = DFService.search(myAgent, template);
+						DFAgentDescription[] result = DFService.search(myAgent,
+								template);
 						if (result.length > 0) {
 							log("server found: " + result[0].getName());
 							server = result[0];
-
-							if(mp3Filename != null){
-								searchFingerPrint(mp3Filename);
-							}
 						} else {
 							log("waiting for SWAzamServer...");
 						}
 					} catch (FIPAException fe) {
 						fe.printStackTrace();
 					}
+				} else {
+					if (reqst != null) {
+						searchByFingerPrint(reqst.getFingerPrint());
+						reqst = null; // already sent
+					}
 				}
+				log("this is client ticking... ");
 			}
+
 		});
 
 		// 2) create receiver which takes care of receiving searchResponses,
@@ -96,20 +99,11 @@ public class ClientAgent extends GuiAgent {
 	/**
 	 * call this from the GUI
 	 * 
-	 * @param mp3Filename something like "samples/4.mp3"
+	 * @param fingerPrint
 	 */
-	public void searchFingerPrint(String mp3Filename) {
+	public void searchByFingerPrint(Fingerprint fingerPrint) {
+		this.searchFingerPrint = fingerPrint;
 
-		FingerprintSystem fs = new FingerprintSystem(22000);
-		byte[] audio = null;
-		try {
-			audio = Utility.fileToByteArray(mp3Filename);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		final Fingerprint fingerprint = fs.fingerprint(audio);
-		
 		// 2) sends a request to the server
 		addBehaviour(new OneShotBehaviour() {
 			private static final long serialVersionUID = 22L;
@@ -120,11 +114,14 @@ public class ClientAgent extends GuiAgent {
 				if (server != null) {
 					ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
 					message.addReceiver(server.getName());
-					message.setContent(new SearchRequest(fingerprint,myAgent.getAID()).serialize());
+					message.setContent(new SearchRequest(searchFingerPrint,
+							myAgent.getAID()).serialize());
 					message.setConversationId("search-fingerPrint");
-					message.setReplyWith("message_" + myAgent.getName() + "_" + System.currentTimeMillis());
+					message.setReplyWith("message_" + myAgent.getName() + "_"
+							+ System.currentTimeMillis());
 					myAgent.send(message);
-					log("Search request with fingerPrint \"" + fingerprint.toString() + "\" sent to server "
+					log("Search request with fingerPrint \""
+							+ searchFingerPrint + "\" sent to server "
 							+ server.getName());
 				} else {
 					// TODO: output message in GUI
@@ -148,7 +145,9 @@ public class ClientAgent extends GuiAgent {
 					String searchResponseSerialised = reply.getContent();
 					SearchResponse searchResponse = null;
 					try {
-						searchResponse = (SearchResponse) Utility.fromString(searchResponseSerialised);
+						searchResponse = (SearchResponse) Utility
+								.fromString(searchResponseSerialised);
+
 					} catch (IOException e) {
 						e.printStackTrace();
 						return;
@@ -156,8 +155,7 @@ public class ClientAgent extends GuiAgent {
 						e.printStackTrace();
 						return;
 					}
-					// TODO: display searchResponse in GUI
-
+					gui.setResult(searchResponse);
 					if (searchResponse.wasFound()) {
 						log("search response found! ");
 						log(searchResponse.toString());
@@ -175,11 +173,5 @@ public class ClientAgent extends GuiAgent {
 
 		}
 
-	}
-
-	@Override
-	protected void onGuiEvent(GuiEvent ev) {
-		// TODO Auto-generated method stub
-		
 	}
 }
