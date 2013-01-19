@@ -1,6 +1,5 @@
 package client;
 
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
@@ -8,6 +7,8 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.gui.GuiAgent;
+import jade.gui.GuiEvent;
 import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
@@ -15,16 +16,17 @@ import java.io.IOException;
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
 import lib.utils.Utility;
-
-
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
+import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
 
-public class ClientAgent extends Agent {
+public class ClientAgent extends GuiAgent {
 
 	private static final long serialVersionUID = 2L;
 	private DFAgentDescription server;
 	private ResponseReceiver responseReceiver;
-	private Fingerprint searchFingerPrint;
+
+	private ClientGUI gui;
+	private String mp3Filename = null;
 
 	protected void log(String message) {
 		System.out.println(message);
@@ -33,17 +35,20 @@ public class ClientAgent extends Agent {
 	@Override
 	protected void setup() {
 		System.out.println("Hallo I'm a ClientAgent!! My name is " + getAID().getName());
-
+		
 		Object[] args = getArguments();
+		if(args != null){
+			System.out.println("params:"+args.length);
+		}
 		if (args != null && args.length != 0) {
-			if (args.length > 0) {
-
-			}
-			if (args.length > 1 && args[1].equals("stayOnDomain")) {
-
+			if (args.length > 0 && args[0].equals("gui")) {
+				gui = new ClientGUI(this);
+			} else if(args.length > 1 && args[0].equals("cli")){
+				mp3Filename  = args[1].toString();
+				System.out.println("Search by CLI for "+mp3Filename+". Hold on...");
 			}
 		} else {
-			// doDelete();
+			
 		}
 
 		// 1) look for an agent which has registered as "SWAzamServer" every second (= wait till a server is online)
@@ -63,8 +68,9 @@ public class ClientAgent extends Agent {
 							log("server found: " + result[0].getName());
 							server = result[0];
 
-							// TODO: remove this line, this is just a test:
-							//searchByFingerPrint("hsdf363dkjfuz7897");
+							if(mp3Filename != null){
+								searchFingerPrint(mp3Filename);
+							}
 						} else {
 							log("waiting for SWAzamServer...");
 						}
@@ -90,11 +96,20 @@ public class ClientAgent extends Agent {
 	/**
 	 * call this from the GUI
 	 * 
-	 * @param fingerPrint
+	 * @param mp3Filename something like "samples/4.mp3"
 	 */
-	public void searchByFingerPrint(Fingerprint fingerPrint) {
-		this.searchFingerPrint = fingerPrint;
+	public void searchFingerPrint(String mp3Filename) {
 
+		FingerprintSystem fs = new FingerprintSystem(22000);
+		byte[] audio = null;
+		try {
+			audio = Utility.fileToByteArray(mp3Filename);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		final Fingerprint fingerprint = fs.fingerprint(audio);
+		
 		// 2) sends a request to the server
 		addBehaviour(new OneShotBehaviour() {
 			private static final long serialVersionUID = 22L;
@@ -105,11 +120,11 @@ public class ClientAgent extends Agent {
 				if (server != null) {
 					ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
 					message.addReceiver(server.getName());
-					message.setContent(new SearchRequest(searchFingerPrint,myAgent.getAID()).serialize());
+					message.setContent(new SearchRequest(fingerprint,myAgent.getAID()).serialize());
 					message.setConversationId("search-fingerPrint");
 					message.setReplyWith("message_" + myAgent.getName() + "_" + System.currentTimeMillis());
 					myAgent.send(message);
-					log("Search request with fingerPrint \"" + searchFingerPrint + "\" sent to server "
+					log("Search request with fingerPrint \"" + fingerprint.toString() + "\" sent to server "
 							+ server.getName());
 				} else {
 					// TODO: output message in GUI
@@ -160,5 +175,11 @@ public class ClientAgent extends Agent {
 
 		}
 
+	}
+
+	@Override
+	protected void onGuiEvent(GuiEvent ev) {
+		// TODO Auto-generated method stub
+		
 	}
 }

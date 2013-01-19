@@ -42,7 +42,9 @@ public class PeerAgent extends Agent {
 			fe.printStackTrace();
 		}
 		addBehaviour(new requestReceiver());
-
+		
+		System.out.println("Hallo I'm the PeerAgent! My name is " + getAID().getName());
+		
 		super.setup();
 	}
 

@@ -1,1 +1,1 @@
-java -cp "lib/jade-bin/lib/jade.jar;bin" jade.Boot -container -host 127.0.0.1 -agents pia:net.microtrash.PeerAgent
+java -cp "lib/jade-bin/lib/jade.jar:bin" jade.Boot -container -host 127.0.0.1 -agents pia:peer.PeerAgent

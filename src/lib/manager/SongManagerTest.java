@@ -5,26 +5,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import lib.utils.Utility;
+
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
 
 public class SongManagerTest {
 
-	/**
-	 * Read file in byte array
-	 * @param name - filename
-	 * @return - byte array representation of file
-	 * @throws IOException
-	 */
-	public static byte[] FileToByteArray(String name) throws IOException {
-		FileInputStream fis = new FileInputStream(new File(name));
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        byte[] buf = new byte[1024];
-        for (int readNum; (readNum = fis.read(buf)) != -1;) {
-            bos.write(buf, 0, readNum);
-        }
-        return bos.toByteArray();
-	}
+	
 	
 	/**
 	 * Calculate fingerprint of mp3 file
@@ -44,13 +32,13 @@ public class SongManagerTest {
 		
 		try {
 			FingerprintSystem fs = new FingerprintSystem(22000);
-			byte[] audio = FileToByteArray("samples/4.mp3");
+			byte[] audio = Utility.fileToByteArray("samples/4.mp3");
 			Fingerprint fingerprint = fs.fingerprint(audio);
 		
 			// search song in database
 			System.out.println("Search non-existent song: " + !songManager.searchSongByFingerprint(fingerprint).isEmpty());
 			
-			audio = FileToByteArray("samples/2.mp3");
+			audio = Utility.fileToByteArray("samples/2.mp3");
 			fingerprint = fs.fingerprint(audio);
 			// search song in database
 			System.out.println("Search existent song: " + songManager.searchSongByFingerprint(fingerprint).get(0).getTitle());
