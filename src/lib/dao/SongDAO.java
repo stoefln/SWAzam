@@ -16,7 +16,7 @@ public class SongDAO extends GenericDaoImpl<Song, Long> implements ISongDAO {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<Song> findByFingerprint(Fingerprint fingerprint) {
-		Query q = HibernateUtil.getEntityManager().createQuery("SELECT s FROM Song as s WHERE s.fingerprint_id = :fingerprint_id").setParameter("fingerprint_id", fingerprint.getId());
+		Query q = HibernateUtil.getEntityManager(persistenceUnit).createQuery("SELECT s FROM Song as s WHERE s.fingerprint_id = :fingerprint_id").setParameter("fingerprint_id", fingerprint.getId());
 		return q.getResultList();
 	}
 

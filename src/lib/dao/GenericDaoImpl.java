@@ -8,36 +8,40 @@ import lib.utils.HibernateUtil;
 
 public class GenericDaoImpl<T,ID extends Serializable> implements IGenericDAO<T,ID> {
 	private static final long serialVersionUID = 4136931177718662078L;
+	protected String persistenceUnit = "swazam_peer";
 
+	public void setPersistenceUnit(String key){
+		this.persistenceUnit  = key;
+	}
 	@Override
 	public void persist(T element) {
-		HibernateUtil.getEntityManager().getTransaction().begin();
-		HibernateUtil.getEntityManager().persist(element);
-		HibernateUtil.getEntityManager().getTransaction().commit();
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().begin();
+		HibernateUtil.getEntityManager(persistenceUnit).persist(element);
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().commit();
 	}
 
 	@Override
 	public T merge(T element) {
-		HibernateUtil.getEntityManager().getTransaction().begin();
-		return HibernateUtil.getEntityManager().merge(element);
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().begin();
+		return HibernateUtil.getEntityManager(persistenceUnit).merge(element);
 	}
 
 	@Override
 	public void remove(T element) {
-		HibernateUtil.getEntityManager().getTransaction().begin();
-		HibernateUtil.getEntityManager().remove(element);
-		HibernateUtil.getEntityManager().getTransaction().commit();
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().begin();
+		HibernateUtil.getEntityManager(persistenceUnit).remove(element);
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().commit();
 	}
 
 	@Override
 	public void refresh(T element) {
-		HibernateUtil.getEntityManager().getTransaction().begin();
-		HibernateUtil.getEntityManager().refresh(element);
-		HibernateUtil.getEntityManager().getTransaction().commit();
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().begin();
+		HibernateUtil.getEntityManager(persistenceUnit).refresh(element);
+		HibernateUtil.getEntityManager(persistenceUnit).getTransaction().commit();
 	}
 
 	@Override
 	public T findByID(Class<T> type, Long id) {
-        return HibernateUtil.getEntityManager().find(type, id);
+        return HibernateUtil.getEntityManager(persistenceUnit).find(type, id);
 	}
 }

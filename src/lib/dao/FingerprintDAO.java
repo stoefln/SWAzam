@@ -15,7 +15,7 @@ public class FingerprintDAO extends GenericDaoImpl<Fingerprint, Long> implements
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<Fingerprint> findBySubFingerprintValue(Integer value) {
-		Query q = HibernateUtil.getEntityManager().createQuery("SELECT f FROM Fingerprint AS f LEFT JOIN f.subfingerprints s WHERE s.value = :subfingerprint_id").setParameter("subfingerprint_id", value);
+		Query q = HibernateUtil.getEntityManager(persistenceUnit).createQuery("SELECT f FROM Fingerprint AS f LEFT JOIN f.subfingerprints s WHERE s.value = :subfingerprint_id").setParameter("subfingerprint_id", value);
 		return q.getResultList();
 	}
 
