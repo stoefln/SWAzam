@@ -42,7 +42,9 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import net.microtrash.SearchResponse;
+import lib.entities.SearchRequest;
+import lib.entities.SearchResponse;
+
 
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
@@ -81,7 +83,7 @@ public class SwazamGUI extends JPanel {
 						SwazamGUI.this.setCursor(new Cursor(Cursor.HAND_CURSOR));
 						fp = FingerPrintCreator
 								.createFingerPrint(selectedFile);
-						request.setFingerPrint(fp);
+						request.setFingerprint(fp);
 						browseButton.setEnabled(true);
 						sendButton.setEnabled(true);
 						resultDisplay
@@ -133,7 +135,7 @@ public class SwazamGUI extends JPanel {
 	JTextArea resultDisplay;
 	private boolean AcessTokenIsSet = false;
 	private Fingerprint fp;
-	Request request = new Request(); 
+	SearchRequest request = new SearchRequest(); 
 	SwazamController controller = new SwazamController(); 
 	public SwazamGUI() {
 		// Create and specify a layout manager

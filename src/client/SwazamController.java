@@ -8,7 +8,9 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import net.microtrash.SearchResponse;
+import lib.entities.SearchRequest;
+import lib.entities.SearchResponse;
+
 
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
@@ -17,7 +19,7 @@ public class SwazamController {
 	 String serverAddrss = "localhost"; 
 	 int port = 8090; 
 	 SearchResponse response; 
-	public  void sendRequestAndHandleResponse(Request r) {
+	public  void sendRequestAndHandleResponse(SearchRequest r) {
 		try {
 			InetAddress addr;
 			Socket sock = new Socket(serverAddrss, port);

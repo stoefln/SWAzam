@@ -8,7 +8,9 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import net.microtrash.SearchResponse;
+import lib.entities.SearchResponse;
+
+
 
 public class TestWebServer {
 
@@ -34,6 +36,7 @@ public class TestWebServer {
 				// wait for a connection
 				Socket remote = s.accept();
 				// remote is now the connected socket
+				/*
 				System.out.println("Connection, sending data.");
 				ObjectInputStream in = new ObjectInputStream(
 						remote.getInputStream());
@@ -50,7 +53,7 @@ public class TestWebServer {
 				
 				out.writeObject(rs);
 				out.flush();
-				remote.close();
+				remote.close();*/
 			} catch (Exception e) {
 				System.out.println("Error: " + e);
 			}
