@@ -1,5 +1,25 @@
 package client;
 
+import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.TickerBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.gui.GuiAgent;
+import jade.gui.GuiEvent;
+import jade.lang.acl.ACLMessage;
+
+import java.io.IOException;
+
+import lib.entities.SearchRequest;
+import lib.entities.SearchResponse;
+import lib.utils.Utility;
+import ac.at.tuwien.infosys.swa.audio.Fingerprint;
+import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
+
+
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
@@ -12,19 +32,23 @@ import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
 
-import net.microtrash.SearchRequest;
-import net.microtrash.SearchResponse;
-import net.microtrash.Utility;
+import lib.entities.SearchRequest;
+import lib.entities.SearchResponse;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
-public class ClientAgent extends Agent {
+public class ClientAgent extends GuiAgent {
 
 	private static final long serialVersionUID = 2L;
 	private DFAgentDescription server;
 	private ResponseReceiver responseReceiver;
+
+	//private ClientGUI clientgui;
+	private String mp3Filename = null;
+	
 	private Fingerprint searchFingerPrint;
-	Request reqst;
+	SearchRequest reqst;
 	private SwazamGUI gui;
+
 
 	protected void log(String message) {
 		System.out.println(message);
@@ -32,25 +56,24 @@ public class ClientAgent extends Agent {
 
 	@Override
 	protected void setup() {
-		System.out.println("Hallo I'm a ClientAgent!! My name is "
-				+ getAID().getName());
-
-		gui = new SwazamGUI(this);
-
+		System.out.println("Hallo I'm a ClientAgent!! My name is " + getAID().getName());
+		
 		Object[] args = getArguments();
+		if(args != null){
+			System.out.println("params:"+args.length);
+		}
 		if (args != null && args.length != 0) {
-			if (args.length > 0) {
-
-			}
-			if (args.length > 1 && args[1].equals("stayOnDomain")) {
-
+			if (args.length > 0 && args[0].equals("gui")) {
+				gui = new SwazamGUI(this);
+			} else if(args.length > 1 && args[0].equals("cli")){
+				mp3Filename  = args[1].toString();
+				System.out.println("Search by CLI for "+mp3Filename+". Hold on...");
 			}
 		} else {
-			// doDelete();
+			gui = new SwazamGUI(this);
 		}
 
-		// 1) look for an agent which has registered as "SWAzamServer" every
-		// second (= wait till a server is online)
+		// 1) look for an agent which has registered as "SWAzamServer" every second (= wait till a server is online)
 		addBehaviour(new TickerBehaviour(this, 1000) {
 
 			private static final long serialVersionUID = 1L;
@@ -62,11 +85,10 @@ public class ClientAgent extends Agent {
 					sd.setType("SWAzamServer");
 					template.addServices(sd);
 					try {
-						DFAgentDescription[] result = DFService.search(myAgent,
-								template);
+						DFAgentDescription[] result = DFService.search(myAgent, template);
 						if (result.length > 0) {
 							log("server found: " + result[0].getName());
-							server = result[0];
+							server = result[0];							
 						} else {
 							log("waiting for SWAzamServer...");
 						}
@@ -75,7 +97,7 @@ public class ClientAgent extends Agent {
 					}
 				} else {
 					if (reqst != null) {
-						searchByFingerPrint(reqst.getFingerPrint());
+						searchByFingerPrint(reqst.getFingerprint());
 						reqst = null; // already sent
 					}
 				}
@@ -131,6 +153,7 @@ public class ClientAgent extends Agent {
 		});
 	}
 
+
 	private class ResponseReceiver extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 2L;
@@ -145,9 +168,7 @@ public class ClientAgent extends Agent {
 					String searchResponseSerialised = reply.getContent();
 					SearchResponse searchResponse = null;
 					try {
-						searchResponse = (SearchResponse) Utility
-								.fromString(searchResponseSerialised);
-
+						searchResponse = (SearchResponse) Utility.fromString(searchResponseSerialised);
 					} catch (IOException e) {
 						e.printStackTrace();
 						return;
@@ -155,7 +176,8 @@ public class ClientAgent extends Agent {
 						e.printStackTrace();
 						return;
 					}
-					gui.setResult(searchResponse);
+					// TODO: display searchResponse in GUI
+
 					if (searchResponse.wasFound()) {
 						log("search response found! ");
 						log(searchResponse.toString());
@@ -173,5 +195,11 @@ public class ClientAgent extends Agent {
 
 		}
 
+	}
+
+	@Override
+	protected void onGuiEvent(GuiEvent ev) {
+		// TODO Auto-generated method stub
+		
 	}
 }
