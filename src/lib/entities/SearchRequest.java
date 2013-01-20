@@ -5,6 +5,7 @@ import jade.core.AID;
 
 import java.io.IOException;
 import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -16,16 +17,15 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import lib.utils.Utility;
-
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
-
-
 
 @Entity
 @Table(name = "request", schema = "public")
 public class SearchRequest implements java.io.Serializable {
+	private static final long serialVersionUID = -2326932267771781244L;
 
 	private int id;
 	private User userBySenderId;
@@ -160,12 +160,13 @@ public class SearchRequest implements java.io.Serializable {
 		
 	}
 
+	@Transient
 	public boolean isAcessTokenSet() {
 		return accessToken != null;
 	}
 
-	public AID getInitiator() {
-		
+	@Transient
+	public AID getInitiator() {		
 		return this.initiator;
 	}
 	

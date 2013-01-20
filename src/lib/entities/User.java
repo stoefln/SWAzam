@@ -19,7 +19,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "user", schema = "public")
 public class User implements java.io.Serializable {
-
+	private static final long serialVersionUID = -6077766902671048022L;
+	
 	private int id;
 	private String username;
 	private String password;

@@ -1,19 +1,12 @@
 package lib.manager;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
 import lib.utils.Utility;
-
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
 
 public class SongManagerTest {
-
-	
-	
 	/**
 	 * Calculate fingerprint of mp3 file
 	 * @param args
@@ -45,7 +38,6 @@ public class SongManagerTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
 		
 		/* 
 		FingerprintSystem fs = new FingerprintSystem(22000);

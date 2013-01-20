@@ -17,24 +17,6 @@ import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
 import lib.utils.Utility;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
-import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
-
-
-import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.TickerBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.lang.acl.ACLMessage;
-
-import java.io.IOException;
-
-import lib.entities.SearchRequest;
-import lib.entities.SearchResponse;
-import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 public class ClientAgent extends GuiAgent {
 

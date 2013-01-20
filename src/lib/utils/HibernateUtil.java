@@ -7,8 +7,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
 public class HibernateUtil {
-
-
 	private static HashMap<String,EntityManager> entityManagers = new HashMap<String, EntityManager>();
 	
 	public static EntityManager getEntityManager(String persistenceUnitName) {

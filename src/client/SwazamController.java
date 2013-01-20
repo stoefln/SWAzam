@@ -1,18 +1,12 @@
 package client;
 
-import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
-
-
-import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 public class SwazamController {
 	

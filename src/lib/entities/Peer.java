@@ -15,7 +15,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "PEER", schema = "public")
 public class Peer implements java.io.Serializable {
-
+	private static final long serialVersionUID = -3667935919922988742L;
+	
 	private int id;
 	private User user;
 	private String ip;
