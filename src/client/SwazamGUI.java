@@ -136,6 +136,7 @@ public class SwazamGUI extends JFrame implements ActionListener{
 			
 		}else
 		if(e.getSource()== sendButton){
+			System.out.println("sendButton clicked");
 			GuiEvent ge = new GuiEvent(this,EventTypes.SEND  );		
 			ge.addParameter(mp3FileName); 
 			clientAgent.postGuiEvent(ge);

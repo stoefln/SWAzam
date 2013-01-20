@@ -66,17 +66,11 @@ public class ServerAgent extends PeerAwareAgent {
 			fe.printStackTrace();
 		}
 
-		// 2) receive requests from clients
+		// 1) receive requests from clients
 		requestReceiver = new RequestReceiver();
 		addBehaviour(requestReceiver);
 
-		// 3) loop through all available peers and forward a
-		// searchRequest/fingerPrint to each of
-		// them (as long as there are fingerPrints)
-		requestForwarder = new RequestForwarder(this, 4000);
-		addBehaviour(requestForwarder);
-
-		// 4) get responses, do transaction stuff (coins) and forward the
+		// 2) get responses, do transaction stuff (coins) and forward the
 		// response back to the client
 		responseReceiver = new ResponseReceiver();
 		addBehaviour(responseReceiver);
