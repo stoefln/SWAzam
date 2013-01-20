@@ -17,7 +17,7 @@ import javax.persistence.Table;
 public class Peer implements java.io.Serializable {
 	private static final long serialVersionUID = -3667935919922988742L;
 	
-	private int id;
+	private Integer id;
 	private User user;
 	private String ip;
 	private int port;
@@ -25,7 +25,7 @@ public class Peer implements java.io.Serializable {
 	public Peer() {
 	}
 
-	public Peer(int id, User user, String ip, int port) {
+	public Peer(Integer id, User user, String ip, int port) {
 		this.id = id;
 		this.user = user;
 		this.ip = ip;
@@ -35,11 +35,11 @@ public class Peer implements java.io.Serializable {
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	public int getId() {
+	public Integer getId() {
 		return this.id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 

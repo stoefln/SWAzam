@@ -24,7 +24,7 @@ import lib.utils.Utility;
 public class Request implements java.io.Serializable {
 	private static final long serialVersionUID = -2326932267771781244L;
 
-	private int id;
+	private Integer id;
 	private User userBySenderId;
 	private User userBySolverId;
 	private Date created;
@@ -35,20 +35,20 @@ public class Request implements java.io.Serializable {
 	public Request() {
 	}
 
-	public Request(int id, User userBySenderId, Date created) {
+	public Request(Integer id, User userBySenderId, Date created) {
 		this.id = id;
 		this.userBySenderId = userBySenderId;
 		this.created = created;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 	
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	public int getId() {
+	public Integer getId() {
 		return this.id;
 	}
 

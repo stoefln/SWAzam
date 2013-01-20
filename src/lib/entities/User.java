@@ -21,7 +21,7 @@ import javax.persistence.Table;
 public class User implements java.io.Serializable {
 	private static final long serialVersionUID = -6077766902671048022L;
 	
-	private int id;
+	private Integer id;
 	private String username;
 	private String password;
 	private String token;
@@ -33,7 +33,7 @@ public class User implements java.io.Serializable {
 	public User() {
 	}
 
-	public User(int id, String username, String password, String token,
+	public User(Integer id, String username, String password, String token,
 			int coins) {
 		this.id = id;
 		this.username = username;
@@ -42,7 +42,7 @@ public class User implements java.io.Serializable {
 		this.coins = coins;
 	}
 
-	public User(int id, String username, String password, String token,
+	public User(Integer id, String username, String password, String token,
 			int coins, Set<SearchRequest> requestsForSolverId, Set<Peer> peers,
 			Set<SearchRequest> requestsForSenderId) {
 		this.id = id;
@@ -58,11 +58,11 @@ public class User implements java.io.Serializable {
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	public int getId() {
+	public Integer getId() {
 		return this.id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
