@@ -19,7 +19,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 
-import lib.dao.SearchRequestDAO;
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
 import lib.utils.Utility;
@@ -45,11 +44,11 @@ public class ServerAgent extends Agent {
 	protected void setup() {
 		System.out.println("Hallo I'm the ServerAgent! My name is " + getAID().getName());
 
-		SearchRequestDAO dao = new SearchRequestDAO();
-		dao.setPersistenceUnit("swazam_server");
-		SearchRequest searchRequest = new SearchRequest();
-		searchRequest.setAcessToken("test");
-		dao.persist(searchRequest);
+		//SearchRequestDAO dao = new SearchRequestDAO();
+		//dao.setPersistenceUnit("swazam_server");
+		//SearchRequest searchRequest = new SearchRequest();
+		//searchRequest.setAcessToken("test");
+		//dao.persist(searchRequest);
 
 		Object[] args = getArguments();
 		if (args != null && args.length != 0) {
