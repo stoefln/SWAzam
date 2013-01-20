@@ -29,7 +29,7 @@ public class ClientAgent extends GuiAgent {
 	private String mp3Filename = null;
 	
 	private Fingerprint searchFingerPrint;
-	SearchRequest reqst;
+	SearchRequest reqst = new SearchRequest();
 	private SwazamGUI gui;
 
 
@@ -89,13 +89,8 @@ public class ClientAgent extends GuiAgent {
 					} catch (FIPAException fe) {
 						fe.printStackTrace();
 					}
-				} else {
-					if (reqst != null) {
-						searchByFingerPrint(reqst.getFingerprint());
-						reqst = null; // already sent
-					}
-				}
-				log("this is client ticking... ");
+				} 
+				
 			}
 
 		});
@@ -172,6 +167,7 @@ public class ClientAgent extends GuiAgent {
 					}
 					// TODO: display searchResponse in GUI
 
+					gui.setResult(searchResponse);
 					if (searchResponse.wasFound()) {
 						log("search response found! ");
 						log(searchResponse.toString());
@@ -193,7 +189,28 @@ public class ClientAgent extends GuiAgent {
 
 	@Override
 	protected void onGuiEvent(GuiEvent ev) {
-		// TODO Auto-generated method stub
-		
+		if(ev.getType()==EventTypes.SESSION_TOKEN){
+			String token = (String) ev.getParameter(0); 
+			reqst.setAcessToken(token);
+		}else
+		if(ev.getType()==EventTypes.BROWSE){
+			String fileName = (String) ev.getParameter(0); 
+			mp3Filename = fileName;
+		}
+		else
+			if(ev.getType()==EventTypes.SEND){
+				String fileName = (String) ev.getParameter(0); 
+				mp3Filename = fileName;
+				try {
+					byte[] audio = Utility.fileToByteArray(mp3Filename);
+					FingerprintSystem fs = new FingerprintSystem(22000);
+					Fingerprint fingerprint = fs.fingerprint(audio);
+				
+					//send search request
+					searchByFingerPrint(fingerprint); 
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 	}
 }
