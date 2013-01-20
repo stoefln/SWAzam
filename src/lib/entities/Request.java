@@ -103,12 +103,12 @@ public class Request implements java.io.Serializable {
 	}
 
 	
-	@Column(name = "response")
+	@Column(name = "solution")
 	public String getSolution() {
 		return this.solution;
 	}
 
-	public void setResponse(String solution) {
+	public void setSolution(String solution) {
 		this.solution = solution;
 	}
 
