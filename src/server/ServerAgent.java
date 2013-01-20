@@ -111,7 +111,7 @@ public class ServerAgent extends PeerAwareAgent {
 					// TODO Catch eventual exception, should a server-object not
 					// have been set?
 
-					log("Request received from client with fingerPrint \"" + request.getFingerprint() + "\"");
+					log("Request received from client \"" + request.getInitiator().getLocalName() + "\"");
 					addRequestForForwarding(request);
 
 				} catch (IOException e) {

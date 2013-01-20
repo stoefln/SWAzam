@@ -104,8 +104,6 @@ public class PeerAwareAgent extends Agent {
 							requestsForwarded.put(request.getId(), request);
 						}
 					}
-					
-					requestsForwarded.put(request.getId(), request);
 				}
 			} catch (NoSuchElementException e) {
 				log("Queue is empty.");
