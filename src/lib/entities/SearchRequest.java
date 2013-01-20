@@ -34,7 +34,6 @@ public class SearchRequest implements java.io.Serializable {
 	private Date resent;
 	private Date solved;
 	private Fingerprint fingerprint;
-	private SearchResponse response;
 	private String accessToken;
 	private AID initiator;
 	
@@ -67,7 +66,6 @@ public class SearchRequest implements java.io.Serializable {
 		this.resent = resent;
 		this.solved = solved;
 		this.fingerprint = fingerprint;
-		this.response = response;
 	}
 
 	@Id
@@ -136,20 +134,10 @@ public class SearchRequest implements java.io.Serializable {
 		this.fingerprint = fingerprint;
 	}
 
-	@Column(name = "response")
-	public SearchResponse getResponse() {
-		return this.response;
-	}
-
-	public void setResponse(SearchResponse response) {
-		this.response = response;
-	}
-
 	public String serialize() {
 		try {
 			return Utility.toString(this);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
@@ -157,7 +145,6 @@ public class SearchRequest implements java.io.Serializable {
 
 	public void setAcessToken(String accessToken) {
 		this.accessToken = accessToken;
-		
 	}
 
 	@Transient
