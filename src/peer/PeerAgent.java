@@ -1,6 +1,5 @@
 package peer;
 
-import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
@@ -9,7 +8,6 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
-import java.util.HashMap;
 
 import lib.PeerAwareAgent;
 import lib.entities.SearchRequest;
@@ -60,8 +58,7 @@ public class PeerAgent extends PeerAwareAgent {
 	}
 
 	protected SearchResponse searchForFingerPrint(Fingerprint fingerprint) {
-		// TODO: replace next lines with implementation (its just for testing)
-		SearchResponse response = new SearchResponse(fingerprint);
+		SearchResponse response = new SearchResponse();
 		
 		SongManager songManager = new SongManager();
 		if (!songManager.searchSongByFingerprint(fingerprint).isEmpty()) {
@@ -94,17 +91,27 @@ public class PeerAgent extends PeerAwareAgent {
 				try {
 					
 					SearchRequest request = (SearchRequest) Utility.fromString(requestMessage.getContent());
-					SearchResponse searchResponse = searchForFingerPrint(request.getFingerprint());
+					SearchResponse response = searchForFingerPrint(request.getFingerprint());
 					ACLMessage reply = requestMessage.createReply();
-					if (searchResponse.wasFound()) {
+					response.setSearchRequest(request);
+					reply.setContent(response.serialize());
+					
+					request.decrementTimeToLive();
+					if (response.wasFound()) {
 						log("music found!");
-						searchResponse.setSearchRequest(request);
 						reply.setPerformative(ACLMessage.CONFIRM);
-						reply.setContent(searchResponse.serialize());
 						myAgent.send(reply);
 					} else {
-						log("no music found :/ forwarding request");
-						addRequestForForwarding(request);
+						log("no music found :/");
+						
+						if(request.getTimeToLive() > 0){ // search request timed out (too many hops) -> create empty response and send it back to the server
+							log("forwarding request. timeToLive: "+request.getTimeToLive());
+							addRequestForForwarding(request);
+						}else{
+							log("timed out (timeToLive = 0). notifying client...");
+							reply.setPerformative(ACLMessage.CONFIRM);
+							myAgent.send(reply);
+						}
 						//reportFailure(requestMessage, "No links found");
 					}
 				} catch (IOException e) {

@@ -10,7 +10,6 @@ import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 public class SearchResponse implements Serializable {
 
 	private static final long serialVersionUID = 2322L;
-	private Fingerprint fingerPrint;
 	private String title = "";
 	private long year = 0;
 	private String artist = "";
@@ -18,15 +17,7 @@ public class SearchResponse implements Serializable {
 	private SearchRequest searchRequest = null;
 	private String respondentToken = "";
 	
-	public SearchResponse(Fingerprint fingerPrint){
-		this.fingerPrint = fingerPrint;
-	}
-	public Fingerprint getFingerPrint() {
-		return fingerPrint;
-	}
-	public void setFingerPrint(Fingerprint fingerPrint) {
-		this.fingerPrint = fingerPrint;
-	}
+
 	public void setRespondentToken(String token) {
 		this.respondentToken = token;
 	}
@@ -70,8 +61,7 @@ public class SearchResponse implements Serializable {
 		return  "title:       " + title + "\n" +
 				"artist:      " + artist + "\n" + 
 				"album:       " + album + "\n" +
-				"year:        " + year + "\n" +
-				"fingerPrint: " + fingerPrint + "\n"; 
+				"year:        " + year + "\n";
 	}
 	
 	public String serialize() {

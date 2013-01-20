@@ -129,4 +129,13 @@ public class User implements java.io.Serializable {
 		this.requestsForSenderId = requestsForSenderId;
 	}
 
+	public void decrementCoins() {
+		this.coins --;
+	}
+
+	public void incrementCoins() {
+		this.coins ++;
+		
+	}
+
 }

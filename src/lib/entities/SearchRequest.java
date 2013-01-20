@@ -16,7 +16,7 @@ public class SearchRequest extends Request implements java.io.Serializable {
 	private SearchResponse response;
 	private String accessToken;
 	private AID initiator;
-	
+	private int timeToLive = 5;
 
 	public SearchRequest() {
 	}
@@ -79,5 +79,16 @@ public class SearchRequest extends Request implements java.io.Serializable {
 	public AID getInitiator() {		
 		return this.initiator;
 	}
+
+	public int getTimeToLive() {
+		return timeToLive;
+	}
+
+	public void setTimeToLive(int timeToLive) {
+		this.timeToLive = timeToLive;
+	}
 	
+	public void decrementTimeToLive(){
+		this.timeToLive --;
+	}
 }

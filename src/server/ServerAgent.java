@@ -1,9 +1,7 @@
 package server;
 
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -12,13 +10,8 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TreeMap;
 
 import lib.PeerAwareAgent;
 import lib.dao.RequestDAO;
@@ -112,6 +105,7 @@ public class ServerAgent extends PeerAwareAgent {
 				
 				try {
 					request = (SearchRequest) Utility.fromString(message.getContent());
+					log("Request received from client \"" + request.getInitiator().getLocalName() + "\" accessToken: "+request.getAccessToken());
 					// server.newRequest(request);
 					// TODO Catch eventual exception, should a server-object not
 					// have been set?
@@ -130,7 +124,7 @@ public class ServerAgent extends PeerAwareAgent {
 					//Storing the automated id onto the SearchRequest for later identification
 					request.setId(requestDB.getId());
 					
-					log("Request received from client \"" + request.getInitiator().getLocalName() + "\"");
+					
 					addRequestForForwarding(request);
 
 				} catch (IOException e) {
@@ -176,12 +170,14 @@ public class ServerAgent extends PeerAwareAgent {
 						return;
 					}
 
-					workingOn.remove(searchResponse.getFingerPrint());
-
-					// TODO: coin transfer
-					// TODO: forward the response back to the client
 					if (searchResponse.wasFound()) {
-
+						User sender = searchResponse.getSearchRequest().getUserBySenderId();
+						User solver = searchResponse.getSearchRequest().getUserBySolverId();
+						sender.decrementCoins();
+						solver.incrementCoins();
+						
+						// TODO: persist sender and solver
+						
 						ACLMessage message = new ACLMessage(ACLMessage.CONFIRM);
 						message.addReceiver(searchResponse.getSearchRequest().getInitiator());
 						message.setContent(searchResponse.serialize());

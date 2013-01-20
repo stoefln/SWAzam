@@ -28,7 +28,6 @@ public class PeerAwareAgent extends Agent {
 	private static int maxForwardsPerSearchRequest = 3;
 	private HashMap<Integer, SearchRequest> requestsForwarded = new HashMap<Integer, SearchRequest>(); 
 
-	protected Set<SearchRequest> workingOn = new HashSet<SearchRequest>();
 	protected List<AID> peers = new ArrayList<AID>();
 	protected List<AID> availablePeers = new ArrayList<AID>();
 	private TreeMap<AID, SearchRequest> forwardSearchRequestQueue = new TreeMap<AID, SearchRequest>();
