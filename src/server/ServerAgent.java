@@ -13,14 +13,19 @@ import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 
+import lib.dao.RequestDAO;
+import lib.dao.UserDAO;
+import lib.entities.Request;
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
+import lib.entities.User;
 import lib.utils.Utility;
 
 public class ServerAgent extends Agent {
@@ -35,7 +40,11 @@ public class ServerAgent extends Agent {
 	private RequestForwarder requestForwarder;
 	private ResponseReceiver responseReceiver;
 	private RequestReceiver requestReceiver;
-
+	private UserDAO userDAO = new UserDAO();
+	private User requestingUser;
+	private RequestDAO requestDAO = new RequestDAO();
+	private Request requestDB; 
+	
 	protected void log(String message) {
 		System.out.println(message);
 	}
@@ -144,12 +153,16 @@ public class ServerAgent extends Agent {
 
 			if (message != null) {
 				SearchRequest request;
+				
 				try {
 					request = (SearchRequest) Utility.fromString(message.getContent());
 					// server.newRequest(request);
 					// TODO Catch eventual exception, should a server-object not
 					// have been set?
-
+					requestingUser = (User) userDAO.findByToken(request.getAccessToken()).get(0);
+					requestDB = new Request(requestingUser, new Date());
+					requestDAO.persist(requestDB);
+					
 					log("Request received from client with fingerPrint \"" + request.getFingerprint() + "\"");
 					fingerPrintSearchQueue.put(request.getInitiator(), request);
 
