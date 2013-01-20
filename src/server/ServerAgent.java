@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -155,7 +156,9 @@ public class ServerAgent extends PeerAwareAgent {
 	private class ResponseReceiver extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 23L;
-
+		private UserDAO userDAO = new UserDAO();
+		private RequestDAO requestDAO = new RequestDAO();
+		
 		@Override
 		public void action() {
 			MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.CONFIRM),
@@ -187,7 +190,32 @@ public class ServerAgent extends PeerAwareAgent {
 					// TODO: coin transfer
 					// TODO: forward the response back to the client
 					if (searchResponse.wasFound()) {
-
+						
+						User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
+						User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
+						Set<Request> requestSet = requestingUser.getRequestsForSenderId();
+						Set<Request> respondentSet = respondingUser.getRequestsForSolverId();
+						
+						Iterator<Request> i = requestSet.iterator();
+						while (i.hasNext()) {
+							Request r = i.next();
+							if (r.getId() == searchResponse.getSearchRequest().getId()) {
+								requestSet.remove(r);
+								r.setSolved(new Date());
+								r.setUserBySolverId(respondingUser);
+								r.setSolution(searchResponse.toString());
+								
+								requestDAO.persist(r);
+								requestSet.add(r);
+								respondentSet.add(r);
+								userDAO.persist(requestingUser);
+								userDAO.persist(respondingUser);
+								break;
+							}
+						}
+						
+						
+						
 						ACLMessage message = new ACLMessage(ACLMessage.CONFIRM);
 						message.addReceiver(searchResponse.getSearchRequest().getInitiator());
 						message.setContent(searchResponse.serialize());
