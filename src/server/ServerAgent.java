@@ -117,6 +117,24 @@ public class ServerAgent extends PeerAwareAgent {
 					// TODO Catch eventual exception, should a server-object not
 					// have been set?
 					
+					log("request Initiator: " + request.getInitiator());
+					log("AccessToken set: " + request.isAcessTokenSet());
+					log("AccessToken: " + request.getAccessToken());
+					
+					/*
+					//Testcode
+					User testUser = new User();
+					testUser.setUsername("Mr. Tester");
+					testUser.setPassword("password");
+					testUser.setCoins(1);
+					testUser.setToken("1234");
+					userDAO.persist(testUser);
+					
+					if (!request.isAcessTokenSet())
+						request.setAcessToken("1234");
+					//End of testcode
+					*/
+					
 					//Storing the request
 					requestingUser = (User) userDAO.findByToken(request.getAccessToken()).get(0);
 					requestDB = new Request(requestingUser, new Date());
@@ -128,6 +146,9 @@ public class ServerAgent extends PeerAwareAgent {
 					requestingUser.setRequestsForSenderId(requestingSet);
 					userDAO.persist(requestingUser);
 					
+					//Test
+					//log("Created-date of first request in set: " + userDAO.findByToken("1234").get(0).getRequestsForSenderId().iterator().next().getCreated());
+					
 					//Storing the automated id onto the SearchRequest for later identification
 					request.setId(requestDB.getId());
 					
@@ -137,6 +158,8 @@ public class ServerAgent extends PeerAwareAgent {
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (IndexOutOfBoundsException e) {
 					e.printStackTrace();
 				}
 
@@ -184,28 +207,31 @@ public class ServerAgent extends PeerAwareAgent {
 					// TODO: coin transfer
 					// TODO: forward the response back to the client
 					if (searchResponse.wasFound()) {
+						try {	
+							User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
+							User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
+							Set<Request> requestSet = requestingUser.getRequestsForSenderId();
+							Set<Request> respondentSet = respondingUser.getRequestsForSolverId();
 						
-						User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
-						User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
-						Set<Request> requestSet = requestingUser.getRequestsForSenderId();
-						Set<Request> respondentSet = respondingUser.getRequestsForSolverId();
-						
-						Iterator<Request> i = requestSet.iterator();
-						while (i.hasNext()) {
-							Request r = i.next();
-							if (r.getId() == searchResponse.getSearchRequest().getId()) {
-								requestSet.remove(r);
-								r.setSolved(new Date());
-								r.setUserBySolverId(respondingUser);
-								r.setSolution(searchResponse.toString());
+							Iterator<Request> i = requestSet.iterator();
+							while (i.hasNext()) {
+								Request r = i.next();
+								if (r.getId() == searchResponse.getSearchRequest().getId()) {
+									requestSet.remove(r);
+									r.setSolved(new Date());
+									r.setUserBySolverId(respondingUser);
+									r.setSolution(searchResponse.toString());
 								
-								requestDAO.persist(r);
-								requestSet.add(r);
-								respondentSet.add(r);
-								userDAO.persist(requestingUser);
-								userDAO.persist(respondingUser);
-								break;
+									requestDAO.persist(r);
+									requestSet.add(r);
+									respondentSet.add(r);
+									userDAO.persist(requestingUser);
+									userDAO.persist(respondingUser);
+									break;
+								}
 							}
+						} catch (IndexOutOfBoundsException e) {
+							e.printStackTrace();
 						}
 						
 						
