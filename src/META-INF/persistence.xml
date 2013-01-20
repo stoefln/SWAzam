@@ -1,4 +1,9 @@
-<persistence xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd" version="1.0">
+<persistence
+xmlns="http://java.sun.com/xml/ns/persistence"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+version="2.0"
+>
 	<persistence-unit name="swazam_peer">
 		<properties>
   			<property name="hibernate.connection.driver_class" value="org.hsqldb.jdbcDriver" /> 
@@ -13,6 +18,10 @@
 	</persistence-unit>
 	
 	<persistence-unit name="swazam_server">
+		<class>lib.entities.User</class>
+		<class>lib.entities.Request</class>
+		<class>lib.entities.Peer</class>
+    	<exclude-unlisted-classes>true</exclude-unlisted-classes>
 		<properties>
   			<property name="hibernate.connection.driver_class" value="org.hsqldb.jdbcDriver" /> 
 			<property name="hibernate.connection.url" value="jdbc:hsqldb:hsql://localhost/swazamserverdb" /> 
@@ -21,7 +30,7 @@
 			<property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect" /> 
 			<!-- <property name="hibernate.show_sql" value="true" /> -->
 			<property name="hibernate.hbm2ddl.auto" value="create" />
-			<property name="javax.persistence.validation.mode" value="none" />  
+			<property name="javax.persistence.validation.mode" value="none" />
 		</properties>
 	</persistence-unit>
 </persistence>
