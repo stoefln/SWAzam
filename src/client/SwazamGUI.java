@@ -19,9 +19,7 @@ import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
 import lib.entities.SearchResponse;
 
-
-
-public class SwazamGUI implements ActionListener{
+public class SwazamGUI extends JFrame implements ActionListener{
 	
 	private static final long serialVersionUID = 1L;
 

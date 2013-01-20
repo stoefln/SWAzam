@@ -26,9 +26,9 @@ public class User implements java.io.Serializable {
 	private String password;
 	private String token;
 	private int coins;
-	private Set<SearchRequest> requestsForSolverId = new HashSet<SearchRequest>(0);
+	private Set<Request> requestsForSolverId = new HashSet<Request>(0);
 	private Set<Peer> peers = new HashSet<Peer>(0);
-	private Set<SearchRequest> requestsForSenderId = new HashSet<SearchRequest>(0);
+	private Set<Request> requestsForSenderId = new HashSet<Request>(0);
 
 	public User() {
 	}
@@ -43,8 +43,8 @@ public class User implements java.io.Serializable {
 	}
 
 	public User(Integer id, String username, String password, String token,
-			int coins, Set<SearchRequest> requestsForSolverId, Set<Peer> peers,
-			Set<SearchRequest> requestsForSenderId) {
+			int coins, Set<Request> requestsForSolverId, Set<Peer> peers,
+			Set<Request> requestsForSenderId) {
 		this.id = id;
 		this.username = username;
 		this.password = password;
@@ -103,11 +103,11 @@ public class User implements java.io.Serializable {
 	}
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "userBySolverId")
-	public Set<SearchRequest> getRequestsForSolverId() {
+	public Set<Request> getRequestsForSolverId() {
 		return this.requestsForSolverId;
 	}
 
-	public void setRequestsForSolverId(Set<SearchRequest> requestsForSolverId) {
+	public void setRequestsForSolverId(Set<Request> requestsForSolverId) {
 		this.requestsForSolverId = requestsForSolverId;
 	}
 
@@ -121,11 +121,11 @@ public class User implements java.io.Serializable {
 	}
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "userBySenderId")
-	public Set<SearchRequest> getRequestsForSenderId() {
+	public Set<Request> getRequestsForSenderId() {
 		return this.requestsForSenderId;
 	}
 
-	public void setRequestsForSenderId(Set<SearchRequest> requestsForSenderId) {
+	public void setRequestsForSenderId(Set<Request> requestsForSenderId) {
 		this.requestsForSenderId = requestsForSenderId;
 	}
 
