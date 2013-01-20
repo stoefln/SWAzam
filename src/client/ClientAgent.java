@@ -27,9 +27,9 @@ public class ClientAgent extends GuiAgent {
 
 	//private ClientGUI clientgui;
 	private String mp3Filename = null;
+	private String accessToken = null;
+
 	
-	private Fingerprint searchFingerPrint;
-	SearchRequest reqst = new SearchRequest();
 	private SwazamGUI gui;
 
 
@@ -57,8 +57,7 @@ public class ClientAgent extends GuiAgent {
 					FingerprintSystem fs = new FingerprintSystem(22000);
 					Fingerprint fingerprint = fs.fingerprint(audio);
 				
-					//send search request
-					reqst = new SearchRequest(fingerprint, this.getAID());
+					searchByFingerPrint(fingerprint);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -112,9 +111,9 @@ public class ClientAgent extends GuiAgent {
 	 * 
 	 * @param fingerPrint
 	 */
-	public void searchByFingerPrint(Fingerprint fingerPrint) {
-		this.searchFingerPrint = fingerPrint;
-
+	public void searchByFingerPrint(final Fingerprint fingerPrint) {
+	
+		
 		// 2) sends a request to the server
 		addBehaviour(new OneShotBehaviour() {
 			private static final long serialVersionUID = 22L;
@@ -123,10 +122,12 @@ public class ClientAgent extends GuiAgent {
 			public void action() {
 
 				if (server != null) {
+					
+					SearchRequest request = new SearchRequest(fingerPrint, myAgent.getAID());
+					request.setAcessToken(accessToken);
 					ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
 					message.addReceiver(server.getName());
-					message.setContent(new SearchRequest(searchFingerPrint,
-							myAgent.getAID()).serialize());
+					message.setContent(request.serialize());
 					message.setConversationId("search-fingerPrint");
 					message.setReplyWith("message_" + myAgent.getName() + "_"
 							+ System.currentTimeMillis());
@@ -190,8 +191,7 @@ public class ClientAgent extends GuiAgent {
 	@Override
 	protected void onGuiEvent(GuiEvent ev) {
 		if(ev.getType()==EventTypes.SESSION_TOKEN){
-			String token = (String) ev.getParameter(0); 
-			reqst.setAcessToken(token);
+			accessToken = (String) ev.getParameter(0);
 		}else
 		if(ev.getType()==EventTypes.BROWSE){
 			String fileName = (String) ev.getParameter(0); 
@@ -199,14 +199,14 @@ public class ClientAgent extends GuiAgent {
 		}
 		else
 			if(ev.getType()==EventTypes.SEND){
+				log("generating fingerprint. hold on...");
 				String fileName = (String) ev.getParameter(0); 
 				mp3Filename = fileName;
 				try {
 					byte[] audio = Utility.fileToByteArray(mp3Filename);
 					FingerprintSystem fs = new FingerprintSystem(22000);
 					Fingerprint fingerprint = fs.fingerprint(audio);
-				
-					//send search request
+					log("fingerprint generated.");
 					searchByFingerPrint(fingerprint); 
 				} catch (Exception e) {
 					e.printStackTrace();

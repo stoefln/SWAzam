@@ -1,13 +1,5 @@
 package lib;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.TreeMap;
-
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
@@ -16,6 +8,16 @@ import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TreeMap;
+
 import lib.entities.SearchRequest;
 
 /**
@@ -29,14 +31,15 @@ public class PeerAwareAgent extends Agent {
 	protected Set<SearchRequest> workingOn = new HashSet<SearchRequest>();
 	protected List<AID> peers = new ArrayList<AID>();
 	protected List<AID> availablePeers = new ArrayList<AID>();
-	private TreeMap<AID, SearchRequest> searchRequestQueue = new TreeMap<AID, SearchRequest>();
+	private TreeMap<AID, SearchRequest> forwardSearchRequestQueue = new TreeMap<AID, SearchRequest>();
+	private RequestForwarder requestForwarder;
 	
 	public PeerAwareAgent() {
 
 	}
 	
 	protected void addRequestForForwarding(SearchRequest request) {
-		searchRequestQueue.put(request.getInitiator(), request);
+		forwardSearchRequestQueue.put(request.getInitiator(), request);
 	}
 
 	protected void log(String message) {
@@ -75,6 +78,13 @@ public class PeerAwareAgent extends Agent {
 
 			}
 		});
+		
+		// loop through all available peers and forward a
+		// searchRequest/fingerPrint to each of
+		// them (as long as there are fingerPrints)
+		requestForwarder = new RequestForwarder(this, 4000);
+		addBehaviour(requestForwarder);
+		
 		super.setup();
 	}
 	
@@ -91,9 +101,9 @@ public class PeerAwareAgent extends Agent {
 			// log("ParseRequestPerformer action()");
 			try {
 				log("Available Peers: " + availablePeers.size() + ", search queue size: "
-						+ searchRequestQueue.size());
-				while (searchRequestQueue.size() > 0) {
-					SearchRequest request = searchRequestQueue.firstEntry().getValue();
+						+ forwardSearchRequestQueue.size());
+				for(Map.Entry<AID, SearchRequest> entry : forwardSearchRequestQueue.entrySet()) {
+					SearchRequest request = entry.getValue();
 
 					// check whether the searchrequest was already forwarded once we
 					// dont want to forward the same request more than once (avoid cyclic forwarding behavior)
@@ -102,6 +112,7 @@ public class PeerAwareAgent extends Agent {
 						boolean wasForwarded = forwardRequest(request);
 						if(wasForwarded){
 							requestsForwarded.put(request.getId(), request);
+							forwardSearchRequestQueue.remove(entry.getKey());
 						}
 					}
 				}
@@ -109,29 +120,28 @@ public class PeerAwareAgent extends Agent {
 				log("Queue is empty.");
 			}
 
-			if (searchRequestQueue.size() == 0) {
+			if (forwardSearchRequestQueue.size() == 0) {
 				log("Nothing to do. Waiting, waiting, waiting...Boooooring!");
 			}
 		}
 		
 		private boolean forwardRequest(SearchRequest request) {
 			boolean wasForwarded = false;
-			
+			log("forwardRequest()");
 			for(int i=0; i< PeerAwareAgent.maxForwardsPerSearchRequest; i++){
 				
 				if(availablePeers.size() > 0){
 					AID selectedPeer = availablePeers.remove(0);
-					log("forward fingerPrint to peer " + selectedPeer.getLocalName() + ", fingerPrint: " + request);
 					ACLMessage message = new ACLMessage(ACLMessage.CFP);
 					message.addReceiver(selectedPeer);
 					message.setContent(request.serialize());
 					message.setConversationId("search-fingerprint");
 					message.setReplyWith("message_" + selectedPeer + "_" + System.currentTimeMillis());
 					myAgent.send(message);
-					searchRequestQueue.remove(request.getInitiator());
 					wasForwarded = true;
+					log("forwarded fingerPrint to peer " + selectedPeer.getLocalName() + ", fingerPrint: " + request);
 				} else {
-					log("no more agents available right now");
+					log("no more peers available right now");
 					break;
 				}
 			}
