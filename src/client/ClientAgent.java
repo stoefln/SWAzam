@@ -17,6 +17,7 @@ import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
 import lib.utils.Utility;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
+import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
 
 public class ClientAgent extends GuiAgent {
 
@@ -50,6 +51,17 @@ public class ClientAgent extends GuiAgent {
 			} else if(args.length > 1 && args[0].equals("cli")){
 				mp3Filename  = args[1].toString();
 				System.out.println("Search by CLI for "+mp3Filename+". Hold on...");
+				
+				try {
+					byte[] audio = Utility.fileToByteArray(mp3Filename);
+					FingerprintSystem fs = new FingerprintSystem(22000);
+					Fingerprint fingerprint = fs.fingerprint(audio);
+				
+					//send search request
+					reqst = new SearchRequest(fingerprint, this.getAID());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		} else {
 			gui = new SwazamGUI(this);
@@ -70,7 +82,7 @@ public class ClientAgent extends GuiAgent {
 						DFAgentDescription[] result = DFService.search(myAgent, template);
 						if (result.length > 0) {
 							log("server found: " + result[0].getName());
-							server = result[0];							
+							server = result[0];
 						} else {
 							log("waiting for SWAzamServer...");
 						}
@@ -124,8 +136,8 @@ public class ClientAgent extends GuiAgent {
 					message.setReplyWith("message_" + myAgent.getName() + "_"
 							+ System.currentTimeMillis());
 					myAgent.send(message);
-					log("Search request with fingerPrint \""
-							+ searchFingerPrint + "\" sent to server "
+					log("Search request with fingerPrint for \""
+							+ mp3Filename + "\" sent to server "
 							+ server.getName());
 				} else {
 					// TODO: output message in GUI
