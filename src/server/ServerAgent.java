@@ -11,6 +11,7 @@ import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Set;
 
 import lib.PeerAwareAgent;
@@ -110,6 +111,24 @@ public class ServerAgent extends PeerAwareAgent {
 					// TODO Catch eventual exception, should a server-object not
 					// have been set?
 					
+					log("request Initiator: " + request.getInitiator());
+					log("AccessToken set: " + request.isAcessTokenSet());
+					log("AccessToken: " + request.getAccessToken());
+					
+					/*
+					//Testcode
+					User testUser = new User();
+					testUser.setUsername("Mr. Tester");
+					testUser.setPassword("password");
+					testUser.setCoins(1);
+					testUser.setToken("1234");
+					userDAO.persist(testUser);
+					
+					if (!request.isAcessTokenSet())
+						request.setAcessToken("1234");
+					//End of testcode
+					*/
+					
 					//Storing the request
 					requestingUser = (User) userDAO.findByToken(request.getAccessToken()).get(0);
 					requestDB = new Request(requestingUser, new Date());
@@ -121,6 +140,9 @@ public class ServerAgent extends PeerAwareAgent {
 					requestingUser.setRequestsForSenderId(requestingSet);
 					userDAO.persist(requestingUser);
 					
+					//Test
+					//log("Created-date of first request in set: " + userDAO.findByToken("1234").get(0).getRequestsForSenderId().iterator().next().getCreated());
+					
 					//Storing the automated id onto the SearchRequest for later identification
 					request.setId(requestDB.getId());
 					
@@ -130,6 +152,8 @@ public class ServerAgent extends PeerAwareAgent {
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (IndexOutOfBoundsException e) {
 					e.printStackTrace();
 				}
 
@@ -143,7 +167,9 @@ public class ServerAgent extends PeerAwareAgent {
 	private class ResponseReceiver extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 23L;
-
+		private UserDAO userDAO = new UserDAO();
+		private RequestDAO requestDAO = new RequestDAO();
+		
 		@Override
 		public void action() {
 			MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.CONFIRM),
@@ -171,12 +197,41 @@ public class ServerAgent extends PeerAwareAgent {
 					}
 
 					if (searchResponse.wasFound()) {
-						User sender = searchResponse.getSearchRequest().getUserBySenderId();
-						User solver = searchResponse.getSearchRequest().getUserBySolverId();
-						sender.decrementCoins();
-						solver.incrementCoins();
+
+						try {	
+							User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
+							User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
+							Set<Request> requestSet = requestingUser.getRequestsForSenderId();
+							Set<Request> respondentSet = respondingUser.getRequestsForSolverId();
 						
-						// TODO: persist sender and solver
+							
+							requestingUser.decrementCoins();
+							respondingUser.incrementCoins();
+							
+							// TODO: persist requestingUser and respondingUser
+							
+							Iterator<Request> i = requestSet.iterator();
+							while (i.hasNext()) {
+								Request r = i.next();
+								if (r.getId() == searchResponse.getSearchRequest().getId()) {
+									requestSet.remove(r);
+									r.setSolved(new Date());
+									r.setUserBySolverId(respondingUser);
+									r.setSolution(searchResponse.toString());
+								
+									requestDAO.persist(r);
+									requestSet.add(r);
+									respondentSet.add(r);
+									userDAO.persist(requestingUser);
+									userDAO.persist(respondingUser);
+									break;
+								}
+							}
+						} catch (IndexOutOfBoundsException e) {
+							e.printStackTrace();
+						}
+						
+						
 						
 						ACLMessage message = new ACLMessage(ACLMessage.CONFIRM);
 						message.addReceiver(searchResponse.getSearchRequest().getInitiator());
