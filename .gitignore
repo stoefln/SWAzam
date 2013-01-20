@@ -3,3 +3,10 @@
 *.jar
 *.war
 *.ear
+APDescription.txt
+MTPs-Main-Container.txt
+swazampeerdb.log
+swazampeerdb.properties
+swazamserverdb.log
+swazamserverdb.properties
+

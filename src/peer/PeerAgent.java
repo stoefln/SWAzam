@@ -1,6 +1,6 @@
 package peer;
 
-import jade.core.Agent;
+import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
@@ -9,7 +9,9 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
+import java.util.HashMap;
 
+import lib.PeerAwareAgent;
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
 import lib.entities.Song;
@@ -17,13 +19,12 @@ import lib.manager.SongManager;
 import lib.utils.Utility;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
-public class PeerAgent extends Agent {
+public class PeerAgent extends PeerAwareAgent {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
-
+	
+	
+	
 	protected void log(String message) {
 		System.out.println(message);
 	}
@@ -91,24 +92,21 @@ public class PeerAgent extends Agent {
 				log("got request!");
 				
 				try {
+					
 					SearchRequest request = (SearchRequest) Utility.fromString(requestMessage.getContent());
 					SearchResponse searchResponse = searchForFingerPrint(request.getFingerprint());
-					searchResponse.setSearchRequest(request);
-					
 					ACLMessage reply = requestMessage.createReply();
 					if (searchResponse.wasFound()) {
 						log("music found!");
+						searchResponse.setSearchRequest(request);
 						reply.setPerformative(ACLMessage.CONFIRM);
 						reply.setContent(searchResponse.serialize());
 						myAgent.send(reply);
 					} else {
-						log("no music found :/");
-						// TODO: implement forwarding of request to other peers
-						// here
-
-						reportFailure(requestMessage, "No links found");
+						log("no music found :/ forwarding request");
+						addRequestForForwarding(request);
+						//reportFailure(requestMessage, "No links found");
 					}
-
 				} catch (IOException e) {
 					reportFailure(requestMessage, "Connection Error");
 				} catch (ClassNotFoundException e) {
@@ -120,6 +118,8 @@ public class PeerAgent extends Agent {
 			}
 
 		}
+
+		
 
 	}
 }

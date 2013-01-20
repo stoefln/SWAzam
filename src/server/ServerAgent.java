@@ -19,27 +19,19 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 
+import lib.PeerAwareAgent;
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
 import lib.utils.Utility;
 
-public class ServerAgent extends Agent {
+public class ServerAgent extends PeerAwareAgent {
 
 	private static final long serialVersionUID = 2L;
-
-	private TreeMap<AID, SearchRequest> fingerPrintSearchQueue = new TreeMap<AID, SearchRequest>();
-	private Set<SearchRequest> workingOn = new HashSet<SearchRequest>();
-	private List<AID> peers = new ArrayList<AID>();
-	private List<AID> availablePeers = new ArrayList<AID>();
-
 	private RequestForwarder requestForwarder;
 	private ResponseReceiver responseReceiver;
 	private RequestReceiver requestReceiver;
 
-	protected void log(String message) {
-		System.out.println(message);
-	}
-
+	
 	@Override
 	protected void setup() {
 		System.out.println("Hallo I'm the ServerAgent! My name is " + getAID().getName());
@@ -73,37 +65,6 @@ public class ServerAgent extends Agent {
 		} catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
-
-		// 1) look for agents which have registered as "peers" every 10 seconds
-		addBehaviour(new TickerBehaviour(this, 10000) {
-
-			private static final long serialVersionUID = 1L;
-
-			protected void onTick() {
-				// log("Update the list of Peer agents.");
-				DFAgentDescription template = new DFAgentDescription();
-				ServiceDescription sd = new ServiceDescription();
-				sd.setType("SWAzamPeer");
-				template.addServices(sd);
-				try {
-					// log("All agents: ");
-					DFAgentDescription[] result = DFService.search(myAgent, template);
-
-					for (int i = 0; i < result.length; ++i) {
-						AID name = result[i].getName();
-						if (!peers.contains(name)) {
-							availablePeers.add(name);
-							peers.add(name);
-							log("new peer registered: " + result[i].getName());
-						}
-						// log("  "+result[i].getName());
-					}
-				} catch (FIPAException fe) {
-					fe.printStackTrace();
-				}
-
-			}
-		});
 
 		// 2) receive requests from clients
 		requestReceiver = new RequestReceiver();
@@ -151,7 +112,7 @@ public class ServerAgent extends Agent {
 					// have been set?
 
 					log("Request received from client with fingerPrint \"" + request.getFingerprint() + "\"");
-					fingerPrintSearchQueue.put(request.getInitiator(), request);
+					addRequestForForwarding(request);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -164,55 +125,6 @@ public class ServerAgent extends Agent {
 			}
 
 		}
-
-	}
-
-	private class RequestForwarder extends TickerBehaviour {
-
-		public RequestForwarder(Agent a, long period) {
-			super(a, period);
-		}
-
-		private static final long serialVersionUID = 123L;
-
-		@Override
-		public void onTick() {
-			// log("ParseRequestPerformer action()");
-			try {
-				log("Available Peers: " + availablePeers.size() + ", search queue size: "
-						+ fingerPrintSearchQueue.size());
-				while (availablePeers.size() > 0 && fingerPrintSearchQueue.size() > 0) {
-					SearchRequest request = fingerPrintSearchQueue.firstEntry().getValue();
-
-					// check whether the searchrequest is still going on. we
-					// dont want to forward the same request more than once
-					// TODO: we need a timeout implementation here
-					if (!workingOn.contains(request)) {
-						workingOn.add(request);
-						AID selectedPeer = availablePeers.remove(0);
-						log("forward fingerPrint to peer " + selectedPeer.getLocalName() + ", fingerPrint: " + request);
-						ACLMessage message = new ACLMessage(ACLMessage.CFP);
-						message.addReceiver(selectedPeer);
-						message.setContent(request.serialize());
-						message.setConversationId("search-fingerprint");
-						message.setReplyWith("message_" + selectedPeer + "_" + System.currentTimeMillis());
-						myAgent.send(message);
-						fingerPrintSearchQueue.remove(request.getInitiator());
-
-						// server.requestResent(request);
-					} else {
-						log("Removing duplicate entry " + request);
-					}
-				}
-			} catch (NoSuchElementException e) {
-				log("Queue is empty.");
-			}
-
-			if (fingerPrintSearchQueue.size() == 0) {
-				log("Nothing to do. Waiting, waiting, waiting...Boooooring!");
-			}
-		}
-
 	}
 
 	private class ResponseReceiver extends CyclicBehaviour {
