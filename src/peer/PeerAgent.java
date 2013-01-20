@@ -9,6 +9,8 @@ import jade.lang.acl.ACLMessage;
 
 import java.io.IOException;
 
+import client.SwazamGUI;
+
 import lib.PeerAwareAgent;
 import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
@@ -16,11 +18,12 @@ import lib.entities.Song;
 import lib.manager.SongManager;
 import lib.utils.Utility;
 import ac.at.tuwien.infosys.swa.audio.Fingerprint;
+import ac.at.tuwien.infosys.swa.audio.FingerprintSystem;
 
 public class PeerAgent extends PeerAwareAgent {
 
 	private static final long serialVersionUID = 1L;
-	
+	private String accessToken;
 	
 	
 	protected void log(String message) {
@@ -29,6 +32,14 @@ public class PeerAgent extends PeerAwareAgent {
 
 	@Override
 	protected void setup() {
+		Object[] args = getArguments();
+		
+		if (args != null && args.length > 0) {
+			accessToken = (String) args[0];
+		} else {
+			log("you have to supply a accessToken as parameter");
+		}
+		
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(getAID());
 		ServiceDescription serviceDescription = new ServiceDescription();
@@ -42,7 +53,7 @@ public class PeerAgent extends PeerAwareAgent {
 		}
 		addBehaviour(new requestReceiver());
 		
-		System.out.println("Hallo I'm the PeerAgent! My name is " + getAID().getName());
+		System.out.println("Hallo I'm the PeerAgent! My name is " + getAID().getName() + " my accessToken is "+accessToken);
 		
 		super.setup();
 	}
@@ -98,6 +109,7 @@ public class PeerAgent extends PeerAwareAgent {
 					
 					request.decrementTimeToLive();
 					if (response.wasFound()) {
+						response.setRespondentToken(accessToken);
 						log("music found!");
 						reply.setPerformative(ACLMessage.CONFIRM);
 						myAgent.send(reply);
