@@ -1,15 +1,6 @@
 package client;
 
-/*
- * Copyright (c) 2000 David Flanagan. All rights reserved. This code is from the
- * book Java Examples in a Nutshell, 2nd Edition. It is provided AS-IS, WITHOUT
- * ANY WARRANTY either expressed or implied. You may study, use, and modify it
- * for any non-commercial purpose. You may distribute it non-commercially as
- * long as you retain this notice. For a commercial use license, or to purchase
- * the book (recommended), visit http://www.davidflanagan.com/javaexamples2.
- */
-
-import java.awt.Cursor;
+import jade.gui.GuiEvent;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -26,18 +17,17 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
-
-import lib.entities.SearchRequest;
 import lib.entities.SearchResponse;
-import ac.at.tuwien.infosys.swa.audio.Fingerprint;
 
 
-public class SwazamGUI extends JPanel {
+
+public class SwazamGUI implements ActionListener{
 	
 	private static final long serialVersionUID = 1L;
-	private client.ClientAgent clientAgent;
 
-	
+	private client.ClientAgent clientAgent;
+	JPanel panel; 
+	String mp3FileName; 
 	public SwazamGUI(ClientAgent agent) {
 		clientAgent = agent;
 
@@ -55,97 +45,17 @@ public class SwazamGUI extends JPanel {
 		f.setVisible(true);
 	}
 	
-	private final class BrowseButtonListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser c = new JFileChooser();
-			c.setFileFilter(new FileFilter() {
-				
-				@Override
-				public String getDescription() {
-					
-					return "*.mp3";
-				}
-				
-				@Override
-				public boolean accept(File f) {
-					return f.getName().endsWith(".mp3"); 
-				}
-			}); 
-			// Demonstrate "Open" dialog:
-			int rVal = c.showOpenDialog(new JFrame());
-			if (rVal == JFileChooser.APPROVE_OPTION) {
-				final File selectedFile = c.getSelectedFile();
 
-				resultDisplay.setText("Successfully opened file: "
-						+ selectedFile.getAbsolutePath());
-
-				resultDisplay.append("\n Calculating fingerprint.....");
-				browseButton.setEnabled(false);
-
-				Runnable fpcalc = new Runnable() {
-					@Override
-					public void run() {
-						SwazamGUI.this.setCursor(new Cursor(Cursor.HAND_CURSOR));
-						fp = FingerPrintCreator
-								.createFingerPrint(selectedFile);
-						request.setFingerprint(fp);
-						browseButton.setEnabled(true);
-						sendButton.setEnabled(true);
-						resultDisplay
-								.append("\n Fingerprint was calculated. You may now send it to the server.");
-						SwazamGUI.this.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-						
-					}
-				};
-
-				Thread thread = new Thread(fpcalc);
-				thread.start();
-
-				sendButton.setVisible(true);
-
-			}
-			if (rVal == JFileChooser.CANCEL_OPTION) {
-				resultDisplay
-						.setText("A valid music file must be selected.");
-
-			}
-		}
-	}
-
-	private final class AccessButtonListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent arg0) {
-			JFrame login = new JFrame();
-			String result = JOptionPane.showInputDialog(login,
-					"Enter AcessToken:");
-
-			if (result == null)
-				return;
-
-			request.setAcessToken(result);
-			AcessTokenIsSet = (request.isAcessTokenSet());
-			if (AcessTokenIsSet) {
-				accessButton.setEnabled(false);
-				sendButton.setEnabled(false);
-				browseButton.setEnabled(true);
-				resultDisplay.setText("You may now select a file. You can select only mp3 files.");
-
-			} else {
-				resultDisplay.setText("You have to enter valid acessToken");
-			}
-		}
-	}
 
 	private JButton accessButton, browseButton, sendButton;
 	JTextArea resultDisplay;
 	private boolean AcessTokenIsSet = false;
-	private Fingerprint fp;
-	SearchRequest request = new SearchRequest();
-	SwazamController controller = new SwazamController(); 
+	
+	 
 	public JPanel create() {
+		panel = new JPanel(); 
 		// Create and specify a layout manager
-		this.setLayout(new GridBagLayout());
+		panel.setLayout(new GridBagLayout());
 
 		// Create a constraints object, and specify some default values
 		GridBagConstraints c = new GridBagConstraints();
@@ -160,7 +70,7 @@ public class SwazamGUI extends JPanel {
 
 		resultDisplay = new JTextArea();
 		resultDisplay.setLineWrap(true);
-		this.add(resultDisplay, c);
+		panel.add(resultDisplay, c);
 
 		c.gridx = 4;
 		c.gridy = 0;
@@ -168,37 +78,31 @@ public class SwazamGUI extends JPanel {
 		c.gridheight = 1;
 		c.weightx = c.weighty = 0.0;
 		accessButton = new JButton("Access Token");
-		this.add(accessButton, c);
+		panel.add(accessButton, c);
 
 		c.gridx = 4;
 		c.gridy = 1;
 		c.gridwidth = 1;
 		c.gridheight = 1;
 		browseButton = new JButton("Browse File");
-		this.add(browseButton, c);
+		panel.add(browseButton, c);
 
 		c.gridx = 4;
 		c.gridy = 2;
 		c.gridwidth = 1;
 		c.gridheight = 1;
 		sendButton = new JButton("Send File");
-		this.add(sendButton, c);
+		panel.add(sendButton, c);
 
 		resultDisplay.append("Please enter your access token to use swazam.");
 		browseButton.setEnabled(false);
 		sendButton.setEnabled(false);
 
-		accessButton.addActionListener(new AccessButtonListener());
+		accessButton.addActionListener(this);
 
-		browseButton.addActionListener(new BrowseButtonListener());
-		sendButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				clientAgent.reqst = request;
-			}
-		});
-		return this;
+		browseButton.addActionListener(this);
+		sendButton.addActionListener(this); 
+		return panel;
 	}
 	
 	public void setResult(SearchResponse res) {
@@ -213,6 +117,87 @@ public class SwazamGUI extends JPanel {
 
 		} else {
 			resultDisplay.setText("Sorry, no match found! ");
+		}
+	}
+
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if(e.getSource()== accessButton){
+			processTokenButtonClick(); 
+			GuiEvent ge = new GuiEvent(this,EventTypes.SESSION_TOKEN  );	
+			ge.addParameter(token); 
+			clientAgent.postGuiEvent(ge);
+			
+		}else
+		if(e.getSource()== browseButton){
+			processBrowseButtonClick(); 
+			GuiEvent ge = new GuiEvent(this,EventTypes.BROWSE  );
+			ge.addParameter(mp3FileName); 
+			clientAgent.postGuiEvent(ge);
+			
+		}else
+		if(e.getSource()== sendButton){
+			GuiEvent ge = new GuiEvent(this,EventTypes.SEND  );		
+			ge.addParameter(mp3FileName); 
+			clientAgent.postGuiEvent(ge);
+			
+		}
+		
+	}
+	String token; 
+	private void processTokenButtonClick() {
+		JFrame login = new JFrame();
+		String result = JOptionPane.showInputDialog(login,
+				"Enter AcessToken:");
+
+		if (result == null)
+			return;
+
+		token = (result);
+		AcessTokenIsSet = true;
+		if (AcessTokenIsSet) {
+			accessButton.setEnabled(false);
+			sendButton.setEnabled(false);
+			browseButton.setEnabled(true);
+			resultDisplay.setText("You may now select a file. You can select only mp3 files.");
+
+		} else {
+			resultDisplay.setText("You have to enter valid acessToken");
+		}
+	}
+
+	private void processBrowseButtonClick() {
+		JFileChooser c = new JFileChooser();
+		c.setFileFilter(new FileFilter() {
+			
+			@Override
+			public String getDescription() {
+				
+				return "*.mp3";
+			}
+			
+			@Override
+			public boolean accept(File f) {
+				return f.getName().endsWith(".mp3"); 
+			}
+		}); 
+		// Demonstrate "Open" dialog:
+		int rVal = c.showOpenDialog(new JFrame());
+		if (rVal == JFileChooser.APPROVE_OPTION) {
+			final File selectedFile = c.getSelectedFile();
+			mp3FileName = selectedFile.getAbsolutePath(); 
+			resultDisplay.setText("Successfully opened file: "
+					+ mp3FileName);			
+
+			sendButton.setVisible(true);
+			sendButton.setEnabled(true);
+
+		}
+		if (rVal == JFileChooser.CANCEL_OPTION) {
+			resultDisplay
+					.setText("A valid music file must be selected.");
+
 		}
 	}
 }
