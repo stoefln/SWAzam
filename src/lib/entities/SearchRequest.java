@@ -26,10 +26,9 @@ public class SearchRequest extends Request implements java.io.Serializable {
 		this.fingerprint = searchFingerPrint;
 	}
 
-	public SearchRequest(int id, User userBySenderId, User userBySolverId,
+	public SearchRequest(User userBySenderId, User userBySolverId,
 			Date created, Date resent, Date solved, Fingerprint fingerprint,
 			SearchResponse response) {
-		super(id, userBySenderId, created);
 		this.setUserBySolverId(userBySolverId);
 		this.setResent(resent);
 		this.setSolved(solved);
@@ -71,6 +70,10 @@ public class SearchRequest extends Request implements java.io.Serializable {
 
 	public boolean isAcessTokenSet() {
 		return accessToken != null;
+	}
+	
+	public String getAccessToken() {
+		return accessToken;
 	}
 
 	public AID getInitiator() {		

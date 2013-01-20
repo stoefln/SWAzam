@@ -35,8 +35,7 @@ public class Request implements java.io.Serializable {
 	public Request() {
 	}
 
-	public Request(Integer id, User userBySenderId, Date created) {
-		this.id = id;
+	public Request(User userBySenderId, Date created) {
 		this.userBySenderId = userBySenderId;
 		this.created = created;
 	}
