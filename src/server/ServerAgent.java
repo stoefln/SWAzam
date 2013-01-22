@@ -30,20 +30,24 @@ public class ServerAgent extends PeerAwareAgent {
 	private ResponseReceiver responseReceiver;
 	private RequestReceiver requestReceiver;
 	
-	private UserDAO userDAO = new UserDAO();
-	private RequestDAO requestDAO = new RequestDAO();
+	private UserDAO userDAO;
+	private RequestDAO requestDAO;
 
 	
 	@Override
 	protected void setup() {
 		System.out.println("Hallo I'm the ServerAgent! My name is " + getAID().getName());
-
+		
 		//SearchRequestDAO dao = new SearchRequestDAO();
 		//dao.setPersistenceUnit("swazam_server");
 		//SearchRequest searchRequest = new SearchRequest();
 		//searchRequest.setAcessToken("test");
 		//dao.persist(searchRequest);
 
+		userDAO = new UserDAO();
+		userDAO.setPersistenceUnit("swazam_server");
+		requestDAO = new RequestDAO();
+		requestDAO.setPersistenceUnit("swazam_server");
 		Object[] args = getArguments();
 		if (args != null && args.length != 0) {
 			if (args.length > 0) {
@@ -115,7 +119,7 @@ public class ServerAgent extends PeerAwareAgent {
 					log("AccessToken set: " + request.isAcessTokenSet());
 					log("AccessToken: " + request.getAccessToken());
 					
-					/*
+					
 					//Testcode
 					User testUser = new User();
 					testUser.setUsername("Mr. Tester");
@@ -123,11 +127,8 @@ public class ServerAgent extends PeerAwareAgent {
 					testUser.setCoins(1);
 					testUser.setToken("1234");
 					userDAO.persist(testUser);
-					
-					if (!request.isAcessTokenSet())
-						request.setAcessToken("1234");
 					//End of testcode
-					*/
+					
 					
 					//Storing the request
 					requestingUser = (User) userDAO.findByToken(request.getAccessToken()).get(0);
@@ -138,10 +139,10 @@ public class ServerAgent extends PeerAwareAgent {
 					Set<Request> requestingSet = requestingUser.getRequestsForSenderId();
 					requestingSet.add(requestDB);
 					requestingUser.setRequestsForSenderId(requestingSet);
-					userDAO.persist(requestingUser);
+					userDAO.merge(requestingUser);
 					
 					//Test
-					//log("Created-date of first request in set: " + userDAO.findByToken("1234").get(0).getRequestsForSenderId().iterator().next().getCreated());
+					log("Created-date of first request in set: " + userDAO.findByToken("1234").get(0).getRequestsForSenderId().iterator().next().getCreated());
 					
 					//Storing the automated id onto the SearchRequest for later identification
 					request.setId(requestDB.getId());
@@ -167,8 +168,6 @@ public class ServerAgent extends PeerAwareAgent {
 	private class ResponseReceiver extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 23L;
-		private UserDAO userDAO = new UserDAO();
-		private RequestDAO requestDAO = new RequestDAO();
 		
 		@Override
 		public void action() {
@@ -197,40 +196,46 @@ public class ServerAgent extends PeerAwareAgent {
 					}
 
 					if (searchResponse.wasFound()) {
-
+						log("response token : " + searchResponse.getRespondentToken());
+						//For testing purposes
+						User testUser2 = new User();
+						testUser2.setUsername("Mrs. Testerina");
+						testUser2.setPassword("password");
+						testUser2.setCoins(2);
+						testUser2.setToken(searchResponse.getRespondentToken());
+						userDAO.persist(testUser2);
+						log("User added: " + testUser2.getUsername() + " " + testUser2.getToken());
+						
 						try {	
 							User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
+							log("Requesting user found " + requestingUser.getUsername() + " " + requestingUser.getToken());
+
 							User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
-							Set<Request> requestSet = requestingUser.getRequestsForSenderId();
-							Set<Request> respondentSet = respondingUser.getRequestsForSolverId();
-						
+							log("Responding user found " + respondingUser.getUsername() + " " + respondingUser.getToken());
 							
 							requestingUser.decrementCoins();
 							respondingUser.incrementCoins();
 							
+							//Request requestDB = requestDAO.findByID(Request.class, searchResponse.getSearchRequest().getId()); 
+							/*
+							 * what you would have to do is:
+							 *get the user who sent the request from db-
+							 *get the user who solved the request from db-
+							 *decrement/increment coins-
+							 *get the request by id (maybe a method has be added to the requestDao)-
+							 *set solved time
+							 *set solver (user)
+							 *save  sender
+							 *save solver
+							 *save request
+							 */
+							
 							// TODO: persist requestingUser and respondingUser
 							
-							Iterator<Request> i = requestSet.iterator();
-							while (i.hasNext()) {
-								Request r = i.next();
-								if (r.getId() == searchResponse.getSearchRequest().getId()) {
-									requestSet.remove(r);
-									r.setSolved(new Date());
-									r.setUserBySolverId(respondingUser);
-									r.setSolution(searchResponse.toString());
-								
-									requestDAO.persist(r);
-									requestSet.add(r);
-									respondentSet.add(r);
-									userDAO.persist(requestingUser);
-									userDAO.persist(respondingUser);
-									break;
-								}
-							}
+
 						} catch (IndexOutOfBoundsException e) {
 							e.printStackTrace();
 						}
-						
 						
 						
 						ACLMessage message = new ACLMessage(ACLMessage.CONFIRM);
