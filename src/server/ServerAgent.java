@@ -110,15 +110,7 @@ public class ServerAgent extends PeerAwareAgent {
 				
 				try {
 					request = (SearchRequest) Utility.fromString(message.getContent());
-					log("Request received from client \"" + request.getInitiator().getLocalName() + "\" accessToken: "+request.getAccessToken());
-					// server.newRequest(request);
-					// TODO Catch eventual exception, should a server-object not
-					// have been set?
-					
-					log("request Initiator: " + request.getInitiator());
-					log("AccessToken set: " + request.isAcessTokenSet());
-					log("AccessToken: " + request.getAccessToken());
-					
+					log("Request received from client \"" + request.getInitiator().getLocalName() + "\" accessToken: "+request.getAccessToken());	
 					
 					//Testcode
 					User testUser = new User();
@@ -140,9 +132,6 @@ public class ServerAgent extends PeerAwareAgent {
 					requestingSet.add(requestDB);
 					requestingUser.setRequestsForSenderId(requestingSet);
 					userDAO.merge(requestingUser);
-					
-					//Test
-					log("Created-date of first request in set: " + userDAO.findByToken("1234").get(0).getRequestsForSenderId().iterator().next().getCreated());
 					
 					//Storing the automated id onto the SearchRequest for later identification
 					request.setId(requestDB.getId());
@@ -196,42 +185,41 @@ public class ServerAgent extends PeerAwareAgent {
 					}
 
 					if (searchResponse.wasFound()) {
-						log("response token : " + searchResponse.getRespondentToken());
-						//For testing purposes
+						log("Response received from user with AccessToken : " + searchResponse.getRespondentToken());
+						
+						//testUser
 						User testUser2 = new User();
 						testUser2.setUsername("Mrs. Testerina");
 						testUser2.setPassword("password");
 						testUser2.setCoins(2);
-						testUser2.setToken(searchResponse.getRespondentToken());
+						testUser2.setToken("321");
 						userDAO.persist(testUser2);
-						log("User added: " + testUser2.getUsername() + " " + testUser2.getToken());
+						//No token received with response, so setting one for testing
+						searchResponse.setRespondentToken(testUser2.getToken()); 
+						
 						
 						try {	
 							User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
-							log("Requesting user found " + requestingUser.getUsername() + " " + requestingUser.getToken());
-
 							User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
-							log("Responding user found " + respondingUser.getUsername() + " " + respondingUser.getToken());
+							log("Initiating coin transfer between requester: " + requestingUser.getToken() + " and respondent: " + respondingUser.getToken());
 							
+							log("Pre-transaction\nRequesting user coins: " + requestingUser.getCoins() + " | Responding user coins: " + respondingUser.getCoins());
 							requestingUser.decrementCoins();
 							respondingUser.incrementCoins();
+							log("Post-transaction\nRequesting user coins: " + requestingUser.getCoins() + " | Responding user coins: " + respondingUser.getCoins());
 							
-							//Request requestDB = requestDAO.findByID(Request.class, searchResponse.getSearchRequest().getId()); 
-							/*
-							 * what you would have to do is:
-							 *get the user who sent the request from db-
-							 *get the user who solved the request from db-
-							 *decrement/increment coins-
-							 *get the request by id (maybe a method has be added to the requestDao)-
-							 *set solved time
-							 *set solver (user)
-							 *save  sender
-							 *save solver
-							 *save request
-							 */
+							Request requestDB = requestDAO.findByID(Request.class, searchResponse.getSearchRequest().getId());
+							requestDB.setSolved(new Date());
+							requestDB.setUserBySolverId(respondingUser);
+							requestDB.setSolution(searchResponse.toString());
 							
-							// TODO: persist requestingUser and respondingUser
+							//Store updated users/request
+							userDAO.merge(requestingUser);
+							userDAO.merge(respondingUser);
+							requestDAO.merge(requestDB);
 							
+							//log to make sure request was stored properly
+							log("Request solved: " + requestDAO.findByID(Request.class, searchResponse.getSearchRequest().getId()).getSolved());
 
 						} catch (IndexOutOfBoundsException e) {
 							e.printStackTrace();

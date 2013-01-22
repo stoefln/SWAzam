@@ -26,7 +26,7 @@ import lib.entities.SearchRequest;
 public class PeerAwareAgent extends Agent {
 	
 	private static int maxForwardsPerSearchRequest = 3;
-	private HashMap<Integer, SearchRequest> requestsForwarded = new HashMap<Integer, SearchRequest>(); 
+	private HashMap<Long, SearchRequest> requestsForwarded = new HashMap<Long, SearchRequest>(); 
 
 	protected List<AID> peers = new ArrayList<AID>();
 	protected List<AID> availablePeers = new ArrayList<AID>();
