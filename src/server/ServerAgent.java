@@ -112,14 +112,15 @@ public class ServerAgent extends PeerAwareAgent {
 					request = (SearchRequest) Utility.fromString(message.getContent());
 					log("Request received from client \"" + request.getInitiator().getLocalName() + "\" accessToken: "+request.getAccessToken());	
 					
-					//Testcode
+					/*
+					//TestUser
 					User testUser = new User();
 					testUser.setUsername("Mr. Tester");
 					testUser.setPassword("password");
 					testUser.setCoins(1);
 					testUser.setToken("1234");
 					userDAO.persist(testUser);
-					//End of testcode
+					*/
 					
 					
 					//Storing the request
@@ -187,6 +188,7 @@ public class ServerAgent extends PeerAwareAgent {
 					if (searchResponse.wasFound()) {
 						log("Response received from user with AccessToken : " + searchResponse.getRespondentToken());
 						
+						/*
 						//testUser
 						User testUser2 = new User();
 						testUser2.setUsername("Mrs. Testerina");
@@ -194,7 +196,7 @@ public class ServerAgent extends PeerAwareAgent {
 						testUser2.setCoins(2);
 						testUser2.setToken(searchResponse.getRespondentToken());
 						userDAO.persist(testUser2); 
-						
+						*/
 						
 						try {	
 							User requestingUser = userDAO.findByToken(searchResponse.getSearchRequest().getAccessToken()).get(0);
