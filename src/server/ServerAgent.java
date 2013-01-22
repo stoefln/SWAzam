@@ -128,11 +128,13 @@ public class ServerAgent extends PeerAwareAgent {
 					requestDB = new Request(requestingUser, new Date());
 					requestDAO.persist(requestDB);
 					
+					/*
 					//Mapping the request to requesting user
 					Set<Request> requestingSet = requestingUser.getRequestsForSenderId();
 					requestingSet.add(requestDB);
 					requestingUser.setRequestsForSenderId(requestingSet);
 					userDAO.merge(requestingUser);
+					*/
 					
 					//Storing the automated id onto the SearchRequest for later identification
 					request.setId(requestDB.getId());
@@ -214,9 +216,9 @@ public class ServerAgent extends PeerAwareAgent {
 							requestDB.setSolution(searchResponse.toString());
 							
 							//Store updated users/request
-							userDAO.merge(requestingUser);
-							userDAO.merge(respondingUser);
-							requestDAO.merge(requestDB);
+							//userDAO.merge(requestingUser);
+							//userDAO.merge(respondingUser);
+							requestDAO.persist(requestDB);
 							
 							//log to make sure request was stored properly
 							log("Request solved: " + requestDAO.findByID(Request.class, searchResponse.getSearchRequest().getId()).getSolved());
