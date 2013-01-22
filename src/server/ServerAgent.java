@@ -192,10 +192,8 @@ public class ServerAgent extends PeerAwareAgent {
 						testUser2.setUsername("Mrs. Testerina");
 						testUser2.setPassword("password");
 						testUser2.setCoins(2);
-						testUser2.setToken("321");
-						userDAO.persist(testUser2);
-						//No token received with response, so setting one for testing
-						searchResponse.setRespondentToken(testUser2.getToken()); 
+						testUser2.setToken(searchResponse.getRespondentToken());
+						userDAO.persist(testUser2); 
 						
 						
 						try {	
@@ -203,10 +201,10 @@ public class ServerAgent extends PeerAwareAgent {
 							User respondingUser = userDAO.findByToken(searchResponse.getRespondentToken()).get(0);
 							log("Initiating coin transfer between requester: " + requestingUser.getToken() + " and respondent: " + respondingUser.getToken());
 							
-							log("Pre-transaction\nRequesting user coins: " + requestingUser.getCoins() + " | Responding user coins: " + respondingUser.getCoins());
+							log("Pre-transaction | Requesting user coins: " + requestingUser.getCoins() + " | Responding user coins: " + respondingUser.getCoins());
 							requestingUser.decrementCoins();
 							respondingUser.incrementCoins();
-							log("Post-transaction\nRequesting user coins: " + requestingUser.getCoins() + " | Responding user coins: " + respondingUser.getCoins());
+							log("Post-transaction| Requesting user coins: " + requestingUser.getCoins() + " | Responding user coins: " + respondingUser.getCoins());
 							
 							Request requestDB = requestDAO.findByID(Request.class, searchResponse.getSearchRequest().getId());
 							requestDB.setSolved(new Date());

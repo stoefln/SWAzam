@@ -105,11 +105,12 @@ public class PeerAgent extends PeerAwareAgent {
 					SearchResponse response = searchForFingerPrint(request.getFingerprint());
 					ACLMessage reply = requestMessage.createReply();
 					response.setSearchRequest(request);
-					reply.setContent(response.serialize());
+					
 					
 					request.decrementTimeToLive();
 					if (response.wasFound()) {
 						response.setRespondentToken(accessToken);
+						reply.setContent(response.serialize());
 						log("music found!");
 						reply.setPerformative(ACLMessage.CONFIRM);
 						myAgent.send(reply);
